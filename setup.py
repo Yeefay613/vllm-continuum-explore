@@ -170,8 +170,10 @@ class cmake_build_ext(build_ext):
             ]
 
         # Pass the python executable to cmake so it can find an exact
-        # match.
-        cmake_args += ['-DVLLM_PYTHON_EXECUTABLE={}'.format(sys.executable)]
+        # match. Allow override via env for environments where the venv
+        # executable does not have matching dev headers installed.
+        python_exec = os.getenv("VLLM_PYTHON_EXECUTABLE", sys.executable)
+        cmake_args += ['-DVLLM_PYTHON_EXECUTABLE={}'.format(python_exec)]
 
         # Pass the python path to cmake so it can reuse the build dependencies
         # on subsequent calls to python.

@@ -7,6 +7,7 @@
 #include "quantization/vectorization.cuh"
 #include "quantization/utils.cuh"
 #include "quant_conversions.cuh"
+#include "cub_ops.cuh"
 
 #ifndef USE_ROCM
   #include <cub/cub.cuh>
@@ -36,7 +37,8 @@ __device__ void compute_rms(float* rms, scalar_t const* __restrict__ input,
 
   using BlockReduce = cub::BlockReduce<float, 1024>;
   __shared__ typename BlockReduce::TempStorage reduceStore;
-  ss = BlockReduce(reduceStore).Reduce(ss, cub::Sum{}, blockDim.x);
+  ss = BlockReduce(reduceStore).Reduce(ss, cub_ops::Sum<float>{},
+                                       blockDim.x);
 
   __shared__ float s_rms;
   if (threadIdx.x == 0) {
@@ -73,7 +75,8 @@ __device__ void compute_dynamic_per_token_scales(
   __shared__ typename BlockReduce::TempStorage reduceStore;
   block_absmax_val_maybe =
       BlockReduce(reduceStore)
-          .Reduce(block_absmax_val_maybe, cub::Max{}, blockDim.x);
+          .Reduce(block_absmax_val_maybe, cub_ops::Max<float>{},
+                  blockDim.x);
 
   __shared__ float s_token_scale;
   if (threadIdx.x == 0) {
@@ -169,7 +172,8 @@ __device__ void compute_rms(float* rms, scalar_t const* __restrict__ input,
 
   using BlockReduce = cub::BlockReduce<float, 1024>;
   __shared__ typename BlockReduce::TempStorage reduceStore;
-  ss = BlockReduce(reduceStore).Reduce(ss, cub::Sum{}, blockDim.x);
+  ss = BlockReduce(reduceStore).Reduce(ss, cub_ops::Sum<float>{},
+                                       blockDim.x);
 
   __shared__ float s_rms;
   if (threadIdx.x == 0) {
@@ -240,7 +244,8 @@ __device__ void compute_dynamic_per_token_scales(
   __shared__ typename BlockReduce::TempStorage reduceStore;
   block_absmax_val_maybe =
       BlockReduce(reduceStore)
-          .Reduce(block_absmax_val_maybe, cub::Max{}, blockDim.x);
+          .Reduce(block_absmax_val_maybe, cub_ops::Max<float>{},
+                  blockDim.x);
 
   __shared__ float s_token_scale;
   if (threadIdx.x == 0) {

@@ -17,14 +17,20 @@ from vllm.transformers_utils.configs.falcon import RWConfig
 from vllm.transformers_utils.configs.jais import JAISConfig
 from vllm.transformers_utils.configs.kimi_vl import KimiVLConfig
 from vllm.transformers_utils.configs.medusa import MedusaConfig
-from vllm.transformers_utils.configs.midashenglm import MiDashengLMConfig
+try:
+    from vllm.transformers_utils.configs.midashenglm import MiDashengLMConfig
+except Exception:
+    MiDashengLMConfig = None
 from vllm.transformers_utils.configs.mlp_speculator import MLPSpeculatorConfig
 from vllm.transformers_utils.configs.moonvit import MoonViTConfig
 from vllm.transformers_utils.configs.nemotron import NemotronConfig
 from vllm.transformers_utils.configs.nemotron_h import NemotronHConfig
 from vllm.transformers_utils.configs.nemotron_vl import Nemotron_Nano_VL_Config
 from vllm.transformers_utils.configs.ovis import OvisConfig
-from vllm.transformers_utils.configs.qwen3_next import Qwen3NextConfig
+try:
+    from vllm.transformers_utils.configs.qwen3_next import Qwen3NextConfig
+except Exception:
+    Qwen3NextConfig = None
 from vllm.transformers_utils.configs.speculators.base import SpeculatorsConfig
 from vllm.transformers_utils.configs.step3_vl import (Step3TextConfig,
                                                       Step3VisionEncoderConfig,

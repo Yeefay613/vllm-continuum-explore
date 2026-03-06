@@ -135,8 +135,15 @@ class ToolCallEstimator:
     #TODO Hanchen This is currently just an average 
     def update_func_call_exec_time(self, job_id: str) -> None:
         #this is called when the func call is back again in scheduler.py, update the exec time with last_func_call
-        last_departure_time = self.job_to_history[job_id][-1]["departure_time"]
-        func = self.job_to_history[job_id][-1]["func_call"]
+        if job_id not in self.job_to_history or not self.job_to_history[job_id]:
+            return
+        last_event = self.job_to_history[job_id][-1]
+        if "departure_time" not in last_event or "func_call" not in last_event:
+            return
+        last_departure_time = last_event["departure_time"]
+        func = last_event["func_call"]
+        if func is None:
+            return
         exec_time = time.time() - last_departure_time
 
         if func not in self.record_func_call_to_exec_time:
@@ -160,13 +167,18 @@ class ToolCallEstimator:
 
     def request_arrives(self, request: Request) -> None:
         logger.info(f"Request job id arriving: {request.job_id}, time is {time.time()}")
+        # Requests without a stable job_id (e.g., plain chat/completions traffic)
+        # should not be tracked by the tool-call estimator.
+        if request.job_id is None:
+            return
         # this is called when a job arrives in scheduler.py, if job is new, create an entry,
         if request.job_id not in self.job_to_history:
             self.job_to_history[request.job_id] = []
             assert request.last_func_call is None
             self.job_to_history[request.job_id].append({"arrival_time": request.arrival_time})
             return
-        request.last_func_call = self.job_to_history[request.job_id][-1]["func_call"]
+        last_event = self.job_to_history[request.job_id][-1]
+        request.last_func_call = last_event.get("func_call")
         logger.info(f"Request job id: {request.job_id}, last func call: {request.last_func_call}")
 
         self.update_func_call_exec_time(request.job_id)
@@ -176,6 +188,8 @@ class ToolCallEstimator:
     
     def request_finished(self, request: Request) -> None:
         logger.info(f"Request job id finishing: {request.job_id}, time is {time.time()}")
+        if request.job_id is None:
+            return
 
         # Detokenize output and parse function call
         this_func_call = None
@@ -198,6 +212,8 @@ class ToolCallEstimator:
                 logger.warning(f"Error detokenizing/parsing output for request {request.request_id}: {e}")
 
         request.this_func_call = this_func_call
+        if request.job_id not in self.job_to_history:
+            self.job_to_history[request.job_id] = []
         self.job_to_history[request.job_id].append({
             "departure_time": time.time(),
             "func_call": request.this_func_call

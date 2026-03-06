@@ -242,7 +242,14 @@ def main(
     if model_class is not None:
         config.setdefault("model", {})["model_class"] = model_class
     if port is not None:
-        config.setdefault("model", {})["port"] = port
+        model_cfg = config.setdefault("model", {})
+        model_class_cfg = str(model_cfg.get("model_class", "")).lower()
+        # vLLM model config expects base_url, not port.
+        if model_class_cfg == "vllm" or "vllm" in model_class_cfg:
+            model_cfg["base_url"] = f"http://localhost:{port}/v1"
+        else:
+            # Keep legacy behavior for model configs that support a direct port field
+            model_cfg["port"] = port
 
     progress_manager = RunBatchProgressManager(len(instances), output_path / f"exit_statuses_{time.time()}.yaml")
 

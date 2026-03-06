@@ -1,0 +1,32 @@
+{
+  "label": "baseline",
+  "timestamp_utc": "2026-03-05T11:02:22.104554+00:00",
+  "config": {
+    "url": "http://localhost:8100",
+    "model": "meta-llama/Llama-3.1-8B-Instruct",
+    "prompt": "Write a 3-sentence summary of the moon.",
+    "max_tokens": 128,
+    "temperature": 0.0,
+    "timeout_s": 120.0,
+    "warmup": 3,
+    "requests": 50,
+    "concurrency": 8
+  },
+  "metrics": {
+    "requests": 50,
+    "successes": 50,
+    "failures": 0,
+    "concurrency": 8,
+    "duration_s": 65.70215612510219,
+    "req_per_s": 0.7610100329857665,
+    "latency_avg_s": 9.518538210410625,
+    "latency_p50_s": 9.503940847469494,
+    "latency_p95_s": 10.103081792779268,
+    "latency_p99_s": 10.105809717471711,
+    "prompt_tokens_total": 2300,
+    "completion_tokens_total": 6352,
+    "total_tokens_total": 8652,
+    "tokens_per_s": 131.68517610785705
+  },
+  "sample_errors": []
+}
