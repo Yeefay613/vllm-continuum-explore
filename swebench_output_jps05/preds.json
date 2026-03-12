@@ -1,0 +1,27 @@
+{
+  "astropy__astropy-12907": {
+    "model_name_or_path": "meta-llama/Llama-3.1-8B-Instruct",
+    "instance_id": "astropy__astropy-12907",
+    "model_patch": "Command '['docker', 'run', '-d', '--name', 'minisweagent-29a25cf4', '-w', '/testbed', '--rm', 'docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-12907:latest', 'sleep', '2h']' returned non-zero exit status 126."
+  },
+  "astropy__astropy-13033": {
+    "model_name_or_path": "meta-llama/Llama-3.1-8B-Instruct",
+    "instance_id": "astropy__astropy-13033",
+    "model_patch": "Command '['docker', 'run', '-d', '--name', 'minisweagent-9b37535e', '-w', '/testbed', '--rm', 'docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-13033:latest', 'sleep', '2h']' returned non-zero exit status 126."
+  },
+  "astropy__astropy-13236": {
+    "model_name_or_path": "meta-llama/Llama-3.1-8B-Instruct",
+    "instance_id": "astropy__astropy-13236",
+    "model_patch": "Command '['docker', 'run', '-d', '--name', 'minisweagent-ece14e4b', '-w', '/testbed', '--rm', 'docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-13236:latest', 'sleep', '2h']' returned non-zero exit status 126."
+  },
+  "astropy__astropy-13398": {
+    "model_name_or_path": "meta-llama/Llama-3.1-8B-Instruct",
+    "instance_id": "astropy__astropy-13398",
+    "model_patch": "Command '['docker', 'run', '-d', '--name', 'minisweagent-e66915ea', '-w', '/testbed', '--rm', 'docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-13398:latest', 'sleep', '2h']' returned non-zero exit status 126."
+  },
+  "astropy__astropy-13453": {
+    "model_name_or_path": "meta-llama/Llama-3.1-8B-Instruct",
+    "instance_id": "astropy__astropy-13453",
+    "model_patch": "Command '['docker', 'run', '-d', '--name', 'minisweagent-d38f42f2', '-w', '/testbed', '--rm', 'docker.io/swebench/sweb.eval.x86_64.astropy_1776_astropy-13453:latest', 'sleep', '2h']' returned non-zero exit status 126."
+  }
+}

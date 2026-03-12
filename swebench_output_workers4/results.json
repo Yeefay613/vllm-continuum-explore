@@ -1,0 +1,13 @@
+{
+  "num_jobs": 1,
+  "average_duration": 83.9532961845398,
+  "total_duration": 83.9532961845398,
+  "min_duration": 83.9532961845398,
+  "max_duration": 83.9532961845398,
+  "median_duration": 83.9532961845398,
+  "percentile_95": 83.9532961845398,
+  "percentile_99": 83.9532961845398,
+  "job_durations": {
+    "null": 83.9532961845398
+  }
+}
