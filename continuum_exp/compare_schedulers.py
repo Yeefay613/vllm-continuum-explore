@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import argparse
 import json
 import statistics
@@ -29,12 +31,15 @@ def percentile(values: list[float], p: float) -> float:
     return d0 + d1
 
 
-def build_payload(model: str, prompt: str, max_tokens: int, temperature: float) -> dict[str, Any]:
+def build_payload(model: str, prompt: str, max_tokens: int,
+                  temperature: float) -> dict[str, Any]:
     return {
         "model": model,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [{
+            "role": "user",
+            "content": prompt
+        }],
         "max_tokens": max_tokens,
-        
         "temperature": temperature,
     }
 
@@ -76,7 +81,8 @@ def one_request(
 
 def run_benchmark(args: argparse.Namespace) -> int:
     url = args.url.rstrip("/") + "/v1/chat/completions"
-    payload = build_payload(args.model, args.prompt, args.max_tokens, args.temperature)
+    payload = build_payload(args.model, args.prompt, args.max_tokens,
+                            args.temperature)
 
     with requests.Session() as session:
         for _ in range(args.warmup):
@@ -97,25 +103,48 @@ def run_benchmark(args: argparse.Namespace) -> int:
     successes = [r for r in results if r["ok"]]
     failures = [r for r in results if not r["ok"]]
 
-    prompt_tokens = [r["prompt_tokens"] for r in successes if isinstance(r["prompt_tokens"], int)]
-    completion_tokens = [r["completion_tokens"] for r in successes if isinstance(r["completion_tokens"], int)]
-    total_tokens = [r["total_tokens"] for r in successes if isinstance(r["total_tokens"], int)]
+    prompt_tokens = [
+        r["prompt_tokens"] for r in successes
+        if isinstance(r["prompt_tokens"], int)
+    ]
+    completion_tokens = [
+        r["completion_tokens"] for r in successes
+        if isinstance(r["completion_tokens"], int)
+    ]
+    total_tokens = [
+        r["total_tokens"] for r in successes
+        if isinstance(r["total_tokens"], int)
+    ]
 
     metrics = {
-        "requests": len(results),
-        "successes": len(successes),
-        "failures": len(failures),
-        "concurrency": args.concurrency,
-        "duration_s": total_time,
+        "requests":
+        len(results),
+        "successes":
+        len(successes),
+        "failures":
+        len(failures),
+        "concurrency":
+        args.concurrency,
+        "duration_s":
+        total_time,
         "req_per_s": (len(results) / total_time) if total_time > 0 else 0.0,
-        "latency_avg_s": statistics.mean(latencies) if latencies else 0.0,
-        "latency_p50_s": percentile(latencies, 50),
-        "latency_p95_s": percentile(latencies, 95),
-        "latency_p99_s": percentile(latencies, 99),
-        "prompt_tokens_total": sum(prompt_tokens),
-        "completion_tokens_total": sum(completion_tokens),
-        "total_tokens_total": sum(total_tokens),
-        "tokens_per_s": (sum(total_tokens) / total_time) if total_time > 0 and total_tokens else None,
+        "latency_avg_s":
+        statistics.mean(latencies) if latencies else 0.0,
+        "latency_p50_s":
+        percentile(latencies, 50),
+        "latency_p95_s":
+        percentile(latencies, 95),
+        "latency_p99_s":
+        percentile(latencies, 99),
+        "prompt_tokens_total":
+        sum(prompt_tokens),
+        "completion_tokens_total":
+        sum(completion_tokens),
+        "total_tokens_total":
+        sum(total_tokens),
+        "tokens_per_s":
+        (sum(total_tokens) /
+         total_time) if total_time > 0 and total_tokens else None,
     }
 
     report = {
@@ -149,7 +178,8 @@ def load_json(path: str) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
-def format_delta(a: float | None, b: float | None, lower_is_better: bool) -> str:
+def format_delta(a: float | None, b: float | None,
+                 lower_is_better: bool) -> str:
     if a is None or b is None:
         return "n/a"
     if a == 0:
@@ -172,10 +202,14 @@ def compare_reports(args: argparse.Namespace) -> int:
         ("successes", bm.get("successes"), cm.get("successes"), False),
         ("failures", bm.get("failures"), cm.get("failures"), True),
         ("req_per_s", bm.get("req_per_s"), cm.get("req_per_s"), False),
-        ("latency_p50_s", bm.get("latency_p50_s"), cm.get("latency_p50_s"), True),
-        ("latency_p95_s", bm.get("latency_p95_s"), cm.get("latency_p95_s"), True),
-        ("latency_p99_s", bm.get("latency_p99_s"), cm.get("latency_p99_s"), True),
-        ("tokens_per_s", bm.get("tokens_per_s"), cm.get("tokens_per_s"), False),
+        ("latency_p50_s", bm.get("latency_p50_s"), cm.get("latency_p50_s"),
+         True),
+        ("latency_p95_s", bm.get("latency_p95_s"), cm.get("latency_p95_s"),
+         True),
+        ("latency_p99_s", bm.get("latency_p99_s"), cm.get("latency_p99_s"),
+         True),
+        ("tokens_per_s", bm.get("tokens_per_s"), cm.get("tokens_per_s"),
+         False),
     ]
 
     print(f"base: {args.base} ({base.get('label', 'base')})")
@@ -192,18 +226,23 @@ def compare_reports(args: argparse.Namespace) -> int:
             b_str = f"{b:.4f}"
         else:
             b_str = str(b)
-        print(f"{name:<16} {a_str:>12} {b_str:>12} {format_delta(a, b, lower_is_better):>20}")
+        print(
+            f"{name:<16} {a_str:>12} {b_str:>12} {format_delta(a, b, lower_is_better):>20}"
+        )
     return 0
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Benchmark and compare vLLM scheduler modes.")
+    p = argparse.ArgumentParser(
+        description="Benchmark and compare vLLM scheduler modes.")
     sub = p.add_subparsers(dest="cmd", required=True)
 
-    run = sub.add_parser("run", help="Run a benchmark against one running server.")
+    run = sub.add_parser("run",
+                         help="Run a benchmark against one running server.")
     run.add_argument("--url", default="http://localhost:8100")
     run.add_argument("--model", required=True)
-    run.add_argument("--prompt", default="Write a 3-sentence summary of the moon.")
+    run.add_argument("--prompt",
+                     default="Write a 3-sentence summary of the moon.")
     run.add_argument("--max-tokens", type=int, default=128)
     run.add_argument("--temperature", type=float, default=0.0)
     run.add_argument("--timeout", type=float, default=120.0)
@@ -213,7 +252,8 @@ def parse_args() -> argparse.Namespace:
     run.add_argument("--label", default="run")
     run.add_argument("--output", required=True)
 
-    cmp_ = sub.add_parser("compare", help="Compare two benchmark JSON reports.")
+    cmp_ = sub.add_parser("compare",
+                          help="Compare two benchmark JSON reports.")
     cmp_.add_argument("--base", required=True)
     cmp_.add_argument("--candidate", required=True)
 

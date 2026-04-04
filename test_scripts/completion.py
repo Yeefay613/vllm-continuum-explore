@@ -1,4 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 from openai import OpenAI
+
 from vllm.transformers_utils.tokenizer import get_tokenizer
 
 openai_api_key = "EMPTY"
@@ -14,6 +17,7 @@ except Exception as e:
     print(f"Failed to load vLLM tokenizer: {e}")
     vllm_tokenizer = None
 
+
 def count_tokens_via_vllm(text):
     """Count tokens using vLLM's native tokenizer for Qwen2.5"""
     if vllm_tokenizer:
@@ -24,6 +28,7 @@ def count_tokens_via_vllm(text):
             print(f"vLLM tokenization failed: {e}")
     return None
 
+
 def count_tokens(text):
     """Count tokens in the given text using the most accurate method available"""
     # First priority: vLLM's native tokenizer (most accurate for Qwen2.5)
@@ -33,15 +38,14 @@ def count_tokens(text):
     else:
         exit("Failed to count tokens")
 
+
 # Test tokenizer with a simple string to verify it's working
 test_text = "Hello, world!"
 test_tokens = count_tokens(test_text)
 print(f"Tokenizer test: '{test_text}' -> {test_tokens} tokens")
 
 # Initialize conversation with system message
-messages = [
-    {"role": "system", "content": "You are a helpful assistant."}
-]
+messages = [{"role": "system", "content": "You are a helpful assistant."}]
 
 # First round
 print("=== Round 1 ===")
@@ -57,8 +61,7 @@ chat_response = client.chat.completions.create(
         "last_func_call": "mv",
         "is_last_step": False,
         "this_func_call": "mv",
-    }
-)
+    })
 
 print(chat_response.choices[0].message.content)
 print(count_tokens(chat_response.choices[0].message.content))

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """
 Simple trajectory inspector for browsing agent conversation trajectories.
 
@@ -12,13 +14,12 @@ import os
 from pathlib import Path
 
 import typer
+from minisweagent.agents.interactive_textual import _messages_to_steps
 from rich.text import Text
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, VerticalScroll
 from textual.widgets import Footer, Header, Static
-
-from minisweagent.agents.interactive_textual import _messages_to_steps
 
 app = typer.Typer(rich_markup_mode="rich", add_completion=False)
 
@@ -38,8 +39,8 @@ class TrajectoryInspector(App):
 
     def __init__(self, trajectory_files: list[Path]):
         css_path = os.environ.get(
-            "MSWEA_INSPECTOR_STYLE_PATH", str(Path(__file__).parent.parent / "config" / "mini.tcss")
-        )
+            "MSWEA_INSPECTOR_STYLE_PATH",
+            str(Path(__file__).parent.parent / "config" / "mini.tcss"))
         self.__class__.CSS = Path(css_path).read_text()
 
         super().__init__()
@@ -114,7 +115,8 @@ class TrajectoryInspector(App):
         except (json.JSONDecodeError, FileNotFoundError, ValueError) as e:
             self.messages = []
             self.steps = []
-            self.notify(f"Error loading {trajectory_file.name}: {e}", severity="error")
+            self.notify(f"Error loading {trajectory_file.name}: {e}",
+                        severity="error")
 
     @property
     def current_trajectory_name(self) -> str:
@@ -145,20 +147,23 @@ class TrajectoryInspector(App):
 
         for message in self.steps[self.i_step]:
             if isinstance(message["content"], list):
-                content_str = "\n".join([item["text"] for item in message["content"]])
+                content_str = "\n".join(
+                    [item["text"] for item in message["content"]])
             else:
                 content_str = str(message["content"])
             message_container = Vertical(classes="message-container")
             container.mount(message_container)
             role = message["role"].replace("assistant", "mini-swe-agent")
-            message_container.mount(Static(role.upper(), classes="message-header"))
-            message_container.mount(Static(Text(content_str, no_wrap=False), classes="message-content"))
+            message_container.mount(
+                Static(role.upper(), classes="message-header"))
+            message_container.mount(
+                Static(Text(content_str, no_wrap=False),
+                       classes="message-content"))
 
         self.title = (
             f"Trajectory {self.i_trajectory + 1}/{self.n_trajectories} - "
             f"{self.current_trajectory_name} - "
-            f"Step {self.i_step + 1}/{self.n_steps}"
-        )
+            f"Step {self.i_step + 1}/{self.n_steps}")
 
     # --- Navigation actions ---
 
@@ -190,9 +195,10 @@ class TrajectoryInspector(App):
 
 
 @app.command(help=__doc__)
-def main(
-    path: str = typer.Argument(".", help="Directory to search for trajectory files or specific trajectory file"),
-) -> None:
+def main(path: str = typer.Argument(
+    ".",
+    help="Directory to search for trajectory files or specific trajectory file"
+), ) -> None:
     path_obj = Path(path)
 
     if path_obj.is_file():

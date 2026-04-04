@@ -224,7 +224,12 @@ environment:
   environment_class: docker
 
 model:
-  model_name: "anthropic/claude-sonnet-4-5-20250929"
+  # model_name: "anthropic/claude-sonnet-4-5-20250929"
+  # model_kwargs:
+  #   drop_params: true
+  #   temperature: 0.0
+  model_name: "meta-llama/Llama-3.1-8B-Instruct"
+  model_class: "vllm"
+  max_completion_tokens: 512
   model_kwargs:
-    drop_params: true
     temperature: 0.0

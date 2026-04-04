@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import os
 import platform
 import subprocess
@@ -13,11 +15,19 @@ class LocalEnvironmentConfig:
 
 
 class LocalEnvironment:
-    def __init__(self, *, config_class: type = LocalEnvironmentConfig, **kwargs):
+
+    def __init__(self,
+                 *,
+                 config_class: type = LocalEnvironmentConfig,
+                 **kwargs):
         """This class executes bash commands directly on the local machine."""
         self.config = config_class(**kwargs)
 
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None):
+    def execute(self,
+                command: str,
+                cwd: str = "",
+                *,
+                timeout: int | None = None):
         """Execute a command in the local environment and return the result as a dict."""
         cwd = cwd or self.config.cwd or os.getcwd()
         result = subprocess.run(

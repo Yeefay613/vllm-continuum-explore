@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import random
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
@@ -14,10 +16,16 @@ class RouletteModelConfig:
 
 
 class RouletteModel:
-    def __init__(self, *, config_class: Callable = RouletteModelConfig, **kwargs):
+
+    def __init__(self,
+                 *,
+                 config_class: Callable = RouletteModelConfig,
+                 **kwargs):
         """This "meta"-model randomly selects one of the models at every call"""
         self.config = config_class(**kwargs)
-        self.models = [get_model(config=config) for config in self.config.model_kwargs]
+        self.models = [
+            get_model(config=config) for config in self.config.model_kwargs
+        ]
 
     @property
     def cost(self) -> float:
@@ -28,7 +36,10 @@ class RouletteModel:
         return sum(model.n_calls for model in self.models)
 
     def get_template_vars(self) -> dict:
-        return asdict(self.config) | {"n_model_calls": self.n_calls, "model_cost": self.cost}
+        return asdict(self.config) | {
+            "n_model_calls": self.n_calls,
+            "model_cost": self.cost
+        }
 
     def select_model(self) -> Model:
         return random.choice(self.models)
@@ -50,7 +61,11 @@ class InterleavingModelConfig:
 
 
 class InterleavingModel(RouletteModel):
-    def __init__(self, *, config_class: Callable = InterleavingModelConfig, **kwargs):
+
+    def __init__(self,
+                 *,
+                 config_class: Callable = InterleavingModelConfig,
+                 **kwargs):
         """This "meta"-model alternates between the models in the sequence for every call"""
         super().__init__(config_class=config_class, **kwargs)
 
@@ -58,5 +73,6 @@ class InterleavingModel(RouletteModel):
         if self.config.sequence is None:
             i_model = self.n_calls % len(self.models)
         else:
-            i_model = self.config.sequence[self.n_calls % len(self.config.sequence)]
+            i_model = self.config.sequence[self.n_calls %
+                                           len(self.config.sequence)]
         return self.models[i_model]

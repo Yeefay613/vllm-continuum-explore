@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import os
 from unittest.mock import patch
 
@@ -7,7 +9,8 @@ from minisweagent.models.utils.key_per_thread import get_key_per_thread
 
 def test_anthropic_model_single_key():
     with patch.dict(os.environ, {"ANTHROPIC_API_KEYS": "test-key"}):
-        with patch("minisweagent.models.litellm_model.LitellmModel.query") as mock_query:
+        with patch("minisweagent.models.litellm_model.LitellmModel.query"
+                   ) as mock_query:
             mock_query.return_value = "response"
 
             model = AnthropicModel(model_name="tardis")
@@ -26,7 +29,8 @@ def test_get_key_per_thread_returns_same_key():
 
 def test_anthropic_model_with_empty_api_keys():
     with patch.dict(os.environ, {"ANTHROPIC_API_KEYS": ""}):
-        with patch("minisweagent.models.litellm_model.LitellmModel.query") as mock_query:
+        with patch("minisweagent.models.litellm_model.LitellmModel.query"
+                   ) as mock_query:
             mock_query.return_value = "response"
 
             AnthropicModel(model_name="tardis").query(messages=[])
@@ -37,12 +41,22 @@ def test_anthropic_model_with_empty_api_keys():
 def test_anthropic_model_applies_cache_control():
     """Test that AnthropicModel applies cache control to messages."""
     messages = [
-        {"role": "user", "content": "Hello!"},
-        {"role": "assistant", "content": "Hi there!"},
-        {"role": "user", "content": "Help me code."},
+        {
+            "role": "user",
+            "content": "Hello!"
+        },
+        {
+            "role": "assistant",
+            "content": "Hi there!"
+        },
+        {
+            "role": "user",
+            "content": "Help me code."
+        },
     ]
 
-    with patch("minisweagent.models.litellm_model.LitellmModel.query") as mock_query:
+    with patch("minisweagent.models.litellm_model.LitellmModel.query"
+               ) as mock_query:
         mock_query.return_value = {"content": "I'll help you code!"}
 
         model = AnthropicModel(model_name="claude-sonnet")
@@ -65,6 +79,8 @@ def test_anthropic_model_applies_cache_control():
         # Last message should have cache control
         last_message = passed_messages[2]
         assert isinstance(last_message["content"], list)
-        assert last_message["content"][0]["cache_control"] == {"type": "ephemeral"}
+        assert last_message["content"][0]["cache_control"] == {
+            "type": "ephemeral"
+        }
         assert last_message["content"][0]["type"] == "text"
         assert last_message["content"][0]["text"] == "Help me code."

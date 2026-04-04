@@ -1,22 +1,29 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import os
 import subprocess
 from unittest.mock import patch
 
 import pytest
-
-from minisweagent.environments.singularity import SingularityEnvironment, SingularityEnvironmentConfig
+from minisweagent.environments.singularity import (
+    SingularityEnvironment, SingularityEnvironmentConfig)
 
 
 def is_singularity_available():
     """Check if Singularity is available."""
     try:
-        subprocess.run(["singularity", "version"], capture_output=True, check=True, timeout=5)
+        subprocess.run(["singularity", "version"],
+                       capture_output=True,
+                       check=True,
+                       timeout=5)
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+    except (subprocess.CalledProcessError, FileNotFoundError,
+            subprocess.TimeoutExpired):
         return False
 
 
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_config_defaults():
     """Test that SingularityEnvironmentConfig has correct default values."""
     config = SingularityEnvironmentConfig(image="python:3.11")
@@ -30,7 +37,8 @@ def test_singularity_environment_config_defaults():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_basic_execution():
     """Test basic command execution in Singularity container."""
     # Using a lightweight image that should be available or easily pulled
@@ -42,12 +50,15 @@ def test_singularity_environment_basic_execution():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_set_env_variables():
     """Test setting environment variables in the container."""
-    env = SingularityEnvironment(
-        image="docker://python:3.11-slim", env={"TEST_VAR": "test_value", "ANOTHER_VAR": "another_value"}
-    )
+    env = SingularityEnvironment(image="docker://python:3.11-slim",
+                                 env={
+                                     "TEST_VAR": "test_value",
+                                     "ANOTHER_VAR": "another_value"
+                                 })
 
     # Test single environment variable
     result = env.execute("echo $TEST_VAR")
@@ -61,11 +72,17 @@ def test_singularity_environment_set_env_variables():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_forward_env_variables():
     """Test forwarding environment variables from host to container."""
-    with patch.dict(os.environ, {"HOST_VAR": "host_value", "ANOTHER_HOST_VAR": "another_host_value"}):
-        env = SingularityEnvironment(image="docker://python:3.11-slim", forward_env=["HOST_VAR", "ANOTHER_HOST_VAR"])
+    with patch.dict(os.environ, {
+            "HOST_VAR": "host_value",
+            "ANOTHER_HOST_VAR": "another_host_value"
+    }):
+        env = SingularityEnvironment(
+            image="docker://python:3.11-slim",
+            forward_env=["HOST_VAR", "ANOTHER_HOST_VAR"])
 
         # Test single forwarded environment variable
         result = env.execute("echo $HOST_VAR")
@@ -79,24 +96,28 @@ def test_singularity_environment_forward_env_variables():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_forward_nonexistent_env_variables():
     """Test forwarding non-existent environment variables (should be empty)."""
-    env = SingularityEnvironment(image="docker://python:3.11-slim", forward_env=["NONEXISTENT_VAR"])
+    env = SingularityEnvironment(image="docker://python:3.11-slim",
+                                 forward_env=["NONEXISTENT_VAR"])
 
     result = env.execute('echo "[$NONEXISTENT_VAR]"')
     assert result["returncode"] == 0
-    assert "[]" in result["output"]  # Empty variable should result in empty string
+    assert "[]" in result[
+        "output"]  # Empty variable should result in empty string
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_combined_env_and_forward():
     """Test both setting and forwarding environment variables together."""
     with patch.dict(os.environ, {"HOST_VAR": "from_host"}):
-        env = SingularityEnvironment(
-            image="docker://python:3.11-slim", env={"SET_VAR": "from_config"}, forward_env=["HOST_VAR"]
-        )
+        env = SingularityEnvironment(image="docker://python:3.11-slim",
+                                     env={"SET_VAR": "from_config"},
+                                     forward_env=["HOST_VAR"])
 
         result = env.execute("echo $SET_VAR $HOST_VAR")
         assert result["returncode"] == 0
@@ -104,13 +125,14 @@ def test_singularity_environment_combined_env_and_forward():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_env_override_forward():
     """Test that explicitly set env variables take precedence over forwarded ones."""
     with patch.dict(os.environ, {"CONFLICT_VAR": "from_host"}):
-        env = SingularityEnvironment(
-            image="docker://python:3.11-slim", env={"CONFLICT_VAR": "from_config"}, forward_env=["CONFLICT_VAR"]
-        )
+        env = SingularityEnvironment(image="docker://python:3.11-slim",
+                                     env={"CONFLICT_VAR": "from_config"},
+                                     forward_env=["CONFLICT_VAR"])
 
         result = env.execute("echo $CONFLICT_VAR")
         assert result["returncode"] == 0
@@ -119,7 +141,8 @@ def test_singularity_environment_env_override_forward():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_custom_cwd():
     """Test executing commands in a custom working directory."""
     env = SingularityEnvironment(image="docker://python:3.11-slim", cwd="/tmp")
@@ -130,7 +153,8 @@ def test_singularity_environment_custom_cwd():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_cwd_parameter_override():
     """Test that the cwd parameter in execute() overrides the config cwd."""
     env = SingularityEnvironment(image="docker://python:3.11-slim", cwd="/")
@@ -141,7 +165,8 @@ def test_singularity_environment_cwd_parameter_override():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_command_failure():
     """Test that command failures are properly captured."""
     env = SingularityEnvironment(image="docker://python:3.11-slim")
@@ -151,7 +176,8 @@ def test_singularity_environment_command_failure():
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not is_singularity_available(), reason="Singularity not available")
+@pytest.mark.skipif(not is_singularity_available(),
+                    reason="Singularity not available")
 def test_singularity_environment_timeout():
     """Test that the timeout configuration is respected."""
     env = SingularityEnvironment(image="docker://python:3.11-slim", timeout=1)

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import json
 import tempfile
 from pathlib import Path
@@ -5,7 +7,6 @@ from unittest.mock import Mock, patch
 
 import litellm
 import pytest
-
 from minisweagent.models.litellm_model import LitellmModel
 
 
@@ -20,7 +21,9 @@ def test_authentication_error_enhanced_message():
     with patch("litellm.completion") as mock_completion:
         # Make completion raise the mock error
         def side_effect(*args, **kwargs):
-            raise litellm.exceptions.AuthenticationError("Invalid API key", llm_provider="openai", model="gpt-4")
+            raise litellm.exceptions.AuthenticationError("Invalid API key",
+                                                         llm_provider="openai",
+                                                         model="gpt-4")
 
         mock_completion.side_effect = side_effect
 
@@ -28,7 +31,8 @@ def test_authentication_error_enhanced_message():
             model._query([{"role": "user", "content": "test"}])
 
         # Check that the error message was enhanced
-        assert "You can permanently set your API key with `mini-extra config set KEY VALUE`." in str(exc_info.value)
+        assert "You can permanently set your API key with `mini-extra config set KEY VALUE`." in str(
+            exc_info.value)
 
 
 def test_model_registry_loading():
@@ -43,13 +47,15 @@ def test_model_registry_loading():
         }
     }
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".json",
+                                     delete=False) as f:
         json.dump(model_costs, f)
         registry_path = f.name
 
     try:
         with patch("litellm.utils.register_model") as mock_register:
-            _model = LitellmModel(model_name="my-custom-model", litellm_model_registry=Path(registry_path))
+            _model = LitellmModel(model_name="my-custom-model",
+                                  litellm_model_registry=Path(registry_path))
 
             # Verify register_model was called with the correct data
             mock_register.assert_called_once_with(model_costs)

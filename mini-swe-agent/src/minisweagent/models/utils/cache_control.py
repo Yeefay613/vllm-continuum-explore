@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import copy
 import warnings
 from typing import Literal
@@ -23,7 +25,9 @@ def _set_cache_control(entry: dict) -> None:
             {
                 "type": "text",
                 "text": _get_content_text(entry),
-                "cache_control": {"type": "ephemeral"},
+                "cache_control": {
+                    "type": "ephemeral"
+                },
             }
         ]
     else:
@@ -34,15 +38,18 @@ def _set_cache_control(entry: dict) -> None:
         entry["cache_control"] = {"type": "ephemeral"}
 
 
-def set_cache_control(
-    messages: list[dict], *, mode: Literal["default_end"] | None = "default_end", last_n_messages_offset: int = 0
-) -> list[dict]:
+def set_cache_control(messages: list[dict],
+                      *,
+                      mode: Literal["default_end"] | None = "default_end",
+                      last_n_messages_offset: int = 0) -> list[dict]:
     """This messages processor adds manual cache control marks to the messages."""
     # ONLY ADD TO THE LAST MESSAGE
     if mode != "default_end":
         raise ValueError(f"Invalid mode: {mode}")
     if last_n_messages_offset:
-        warnings.warn("last_n_messages_offset is deprecated and will be removed in the future. It has no effect.")
+        warnings.warn(
+            "last_n_messages_offset is deprecated and will be removed in the future. It has no effect."
+        )
 
     messages = copy.deepcopy(messages)
     new_messages = []

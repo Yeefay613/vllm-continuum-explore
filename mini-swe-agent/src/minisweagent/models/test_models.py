@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import logging
 import time
 from dataclasses import asdict, dataclass
@@ -14,6 +16,7 @@ class DeterministicModelConfig:
 
 
 class DeterministicModel:
+
     def __init__(self, **kwargs):
         """
         Initialize with a list of outputs to return in sequence.
@@ -39,4 +42,7 @@ class DeterministicModel:
         return {"content": output}
 
     def get_template_vars(self) -> dict[str, Any]:
-        return asdict(self.config) | {"n_model_calls": self.n_calls, "model_cost": self.cost}
+        return asdict(self.config) | {
+            "n_model_calls": self.n_calls,
+            "model_cost": self.cost
+        }

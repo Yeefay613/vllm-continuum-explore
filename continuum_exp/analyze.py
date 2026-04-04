@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """
 Calculate average job duration from scheduler_timestamps.
 
@@ -8,19 +10,20 @@ to the last Request_departure_time.
 
 import argparse
 import json
-import os
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
-def load_scheduler_timestamps(input_dir: str) -> Dict[str, List[Dict[str, Any]]]:
+def load_scheduler_timestamps(
+        input_dir: str) -> Dict[str, List[Dict[str, Any]]]:
     """Load scheduler_timestamps from the input directory."""
     timestamp_file = Path(input_dir) / "scheduler_timestamps"
 
     if not timestamp_file.exists():
-        raise FileNotFoundError(f"scheduler_timestamps not found in {input_dir}")
+        raise FileNotFoundError(
+            f"scheduler_timestamps not found in {input_dir}")
 
-    with open(timestamp_file, 'r') as f:
+    with open(timestamp_file) as f:
         data = json.load(f)
 
     return data
@@ -51,7 +54,8 @@ def calculate_job_duration(job_history: List[Dict[str, Any]]) -> float:
     return duration
 
 
-def calculate_average_duration(timestamps: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+def calculate_average_duration(
+        timestamps: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
     """Calculate average job duration across all jobs."""
     job_durations = {}
     all_arrival_times = []
@@ -85,7 +89,8 @@ def calculate_average_duration(timestamps: Dict[str, List[Dict[str, Any]]]) -> D
     durations = sorted(job_durations.values())
 
     # Calculate total_duration as largest departure - smallest arrival
-    total_duration = max(all_departure_times) - min(all_arrival_times) if all_arrival_times and all_departure_times else 0
+    total_duration = max(all_departure_times) - min(
+        all_arrival_times) if all_arrival_times and all_departure_times else 0
 
     # Calculate median
     n = len(durations)
@@ -145,20 +150,19 @@ def save_results(results: Dict[str, Any], output_dir: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Calculate average job duration from scheduler_timestamps"
-    )
+        description="Calculate average job duration from scheduler_timestamps")
     parser.add_argument(
         "--input-dir",
         type=str,
         default="./continuum_exp",
-        help="Directory containing scheduler_timestamps file (default: ./continuum_exp)"
+        help=
+        "Directory containing scheduler_timestamps file (default: ./continuum_exp)"
     )
     parser.add_argument(
         "--output-dir",
         type=str,
         default="./continuum_exp",
-        help="Directory to save results (default: ./continuum_exp)"
-    )
+        help="Directory to save results (default: ./continuum_exp)")
 
     args = parser.parse_args()
 

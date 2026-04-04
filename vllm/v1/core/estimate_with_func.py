@@ -1,23 +1,39 @@
-from vllm.v1.request import Request
-from typing import Optional
-import time
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import re
+import time
+from typing import Optional
+
 from vllm.logger import init_logger
 from vllm.transformers_utils.tokenizer import AnyTokenizer, get_tokenizer
+from vllm.v1.request import Request
 
 logger = init_logger(__name__)
 
 FIXED_THRESHOLD_CONTINUUM = 2.0  # seconds
 
+from typing import TypedDict
+
+class ArrivalEvent(TypedDict):
+    arrival_time: float
+
+class DepartureEvent(TypedDict):
+    departure_time: float
+    func_call: str | None
+
+HistoryEvent = ArrivalEvent | DepartureEvent
+
+
 class Continuum_Recorder:
+
     def __init__(self):
-        self.job_id_to_history = {}
+        self.job_id_to_history: dict[str, list[HistoryEvent]] = {}
         # Track scheduling operation timing
         self.scheduling_times = []  # List of {start_time, end_time, duration}
 
     def print_history(self):
-        import os
         import json
+        import os
 
         # Per-run output directory (set by launcher); fallback to default
         output_dir = os.environ.get("RUN_OUTPUT_DIR", "./continuum_exp")
@@ -33,33 +49,49 @@ class Continuum_Recorder:
     def request_arrives(self, request: Request):
         if request.job_id not in self.job_id_to_history:
             self.job_id_to_history[request.job_id] = []
-        self.job_id_to_history[request.job_id].append({"Request_arrival_time": time.time()})
-    
+        self.job_id_to_history[request.job_id].append(
+            {"Request_arrival_time": time.time()})
+
     def request_finished(self, request: Request):
-        self.job_id_to_history[request.job_id].append({"Request_departure_time": time.time()})
+        self.job_id_to_history[request.job_id].append(
+            {"Request_departure_time": time.time()})
 
     def request_evicted_from_running_queue(self, request: Request):
-        self.job_id_to_history[request.job_id].append({"Request_evicted_from_running_queue_time": time.time()})
+        self.job_id_to_history[request.job_id].append(
+            {"Request_evicted_from_running_queue_time": time.time()})
 
     def request_pinned(self, request: Request):
-        self.job_id_to_history[request.job_id].append({"pinned_time": time.time()})
+        self.job_id_to_history[request.job_id].append(
+            {"pinned_time": time.time()})
 
     def request_unpinned(self, request: Request):
-        self.job_id_to_history[request.job_id].append({"unpinned_time": time.time()})
+        self.job_id_to_history[request.job_id].append(
+            {"unpinned_time": time.time()})
 
-    def request_waiting_to_running(self, request: Request, prompt_length: int, hit_length: int = 0):
+    def request_waiting_to_running(self,
+                                   request: Request,
+                                   prompt_length: int,
+                                   hit_length: int = 0):
         self.job_id_to_history[request.job_id].append({
-            "waiting_to_running": time.time(),
-            "prompt_length": prompt_length,
-            "hit_length": hit_length
+            "waiting_to_running":
+            time.time(),
+            "prompt_length":
+            prompt_length,
+            "hit_length":
+            hit_length
         })
-    
-    def request_evicted_to_running(self, request: Request, prompt_length: int, hit_length: int):
+
+    def request_evicted_to_running(self, request: Request, prompt_length: int,
+                                   hit_length: int):
         self.job_id_to_history[request.job_id].append({
-            "evicted_to_running": time.time(),
-            "prompt_length": prompt_length,
-            "hit_length": hit_length
+            "evicted_to_running":
+            time.time(),
+            "prompt_length":
+            prompt_length,
+            "hit_length":
+            hit_length
         })
+
 
 class ToolCallParser:
     """Parser for extracting function calls from LLM output.
@@ -91,7 +123,9 @@ class ToolCallParser:
 
         return None
 
+
 class ToolCallEstimator:
+
     def __init__(
         self,
         tokenizer: Optional[AnyTokenizer] = None,
@@ -119,7 +153,8 @@ class ToolCallEstimator:
                 )
                 logger.info(f"Initialized tokenizer for model: {model_name}")
             except Exception as e:
-                logger.warning(f"Failed to initialize tokenizer for {model_name}: {e}")
+                logger.warning(
+                    f"Failed to initialize tokenizer for {model_name}: {e}")
                 self.tokenizer = None
         else:
             self.tokenizer = None
@@ -131,92 +166,93 @@ class ToolCallEstimator:
         if func not in self.func_call_to_exec_time:
             return None
         return self.func_call_to_exec_time[func]
-    
-    #TODO Hanchen This is currently just an average 
+
+    #TODO Hanchen This is currently just an average
     def update_func_call_exec_time(self, job_id: str) -> None:
         #this is called when the func call is back again in scheduler.py, update the exec time with last_func_call
-        if job_id not in self.job_to_history or not self.job_to_history[job_id]:
-            return
-        last_event = self.job_to_history[job_id][-1]
-        if "departure_time" not in last_event or "func_call" not in last_event:
-            return
-        last_departure_time = last_event["departure_time"]
-        func = last_event["func_call"]
-        if func is None:
-            return
+        last_departure_time = self.job_to_history[job_id][-1]["departure_time"]
+        func = self.job_to_history[job_id][-1]["func_call"]
         exec_time = time.time() - last_departure_time
 
         if func not in self.record_func_call_to_exec_time:
             self.record_func_call_to_exec_time[func] = [exec_time]
         else:
             self.record_func_call_to_exec_time[func].append(exec_time)
-        self.func_call_to_exec_time[func] = sum(self.record_func_call_to_exec_time[func]) / len(self.record_func_call_to_exec_time[func])
-        return 
-    
+        self.func_call_to_exec_time[func] = sum(
+            self.record_func_call_to_exec_time[func]) / len(
+                self.record_func_call_to_exec_time[func])
+        return
+
     #Functions below will be called by outside functions
     def set_up_pin(self, request: Request) -> float:
         if request.this_func_call is None:
             return 0
-        
-        this_func_call_exec_time = self.get_func_call_exec_time(request.this_func_call) or 0.0
+
+        this_func_call_exec_time = self.get_func_call_exec_time(
+            request.this_func_call) or 0.0
 
         if this_func_call_exec_time > FIXED_THRESHOLD_CONTINUUM:
             return 0
-        
+
         return FIXED_THRESHOLD_CONTINUUM
 
     def request_arrives(self, request: Request) -> None:
-        logger.info(f"Request job id arriving: {request.job_id}, time is {time.time()}")
-        # Requests without a stable job_id (e.g., plain chat/completions traffic)
-        # should not be tracked by the tool-call estimator.
-        if request.job_id is None:
-            return
+        logger.info(
+            f"Request job id arriving: {request.job_id}, time is {time.time()}"
+        )
         # this is called when a job arrives in scheduler.py, if job is new, create an entry,
         if request.job_id not in self.job_to_history:
             self.job_to_history[request.job_id] = []
             assert request.last_func_call is None
-            self.job_to_history[request.job_id].append({"arrival_time": request.arrival_time})
+            self.job_to_history[request.job_id].append(
+                {"arrival_time": request.arrival_time})
             return
-        last_event = self.job_to_history[request.job_id][-1]
-        request.last_func_call = last_event.get("func_call")
-        logger.info(f"Request job id: {request.job_id}, last func call: {request.last_func_call}")
+        request.last_func_call = self.job_to_history[request.job_id][-1]["func_call"]
+        logger.info(
+            f"Request job id: {request.job_id}, last func call: {request.last_func_call}"
+        )
 
         self.update_func_call_exec_time(request.job_id)
 
-        self.job_to_history[request.job_id].append({"arrival_time": request.arrival_time})
+        self.job_to_history[request.job_id].append(
+            {"arrival_time": request.arrival_time})
         return
-    
+
     def request_finished(self, request: Request) -> None:
-        logger.info(f"Request job id finishing: {request.job_id}, time is {time.time()}")
-        if request.job_id is None:
-            return
+        logger.info(
+            f"Request job id finishing: {request.job_id}, time is {time.time()}"
+        )
 
         # Detokenize output and parse function call
         this_func_call = None
         if self.tokenizer is not None and len(request.output_token_ids) > 0:
             try:
                 # Detokenize the output tokens
-                output_text = self.tokenizer.decode(
-                    request.output_token_ids,
-                    skip_special_tokens=True
-                )
+                output_text = self.tokenizer.decode(request.output_token_ids,
+                                                    skip_special_tokens=True)
 
                 # Parse function call using the parser
                 this_func_call = self.parser.parse(output_text)
 
                 if this_func_call:
-                    logger.info(f"Extracted func_call: {this_func_call} from output")
+                    logger.info(
+                        f"Extracted func_call: {this_func_call} from output")
                 else:
-                    logger.debug(f"No function call found in output: {output_text[:200]}")
+                    logger.debug(
+                        f"No function call found in output: {output_text[:200]}"
+                    )
             except Exception as e:
-                logger.warning(f"Error detokenizing/parsing output for request {request.request_id}: {e}")
+                logger.warning(
+                    f"Error detokenizing/parsing output for request {request.request_id}: {e}"
+                )
 
         request.this_func_call = this_func_call
         if request.job_id not in self.job_to_history:
             self.job_to_history[request.job_id] = []
         self.job_to_history[request.job_id].append({
-            "departure_time": time.time(),
-            "func_call": request.this_func_call
+            "departure_time":
+            time.time(),
+            "func_call":
+            request.this_func_call
         })
         return
-

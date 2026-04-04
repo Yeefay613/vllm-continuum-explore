@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import os
 from unittest.mock import patch
 
-from minisweagent.run.extra.config import app, configure_if_first_time, edit, set, setup, unset
+from minisweagent.run.extra.config import (app, configure_if_first_time, edit,
+                                           set, setup, unset)
 
 
 class TestConfigSetup:
@@ -12,11 +15,15 @@ class TestConfigSetup:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
-            patch("minisweagent.run.extra.config.console.print"),
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.console.print"),
         ):
-            mock_prompt.side_effect = ["anthropic/claude-sonnet-4-5-20250929", "ANTHROPIC_API_KEY", "sk-test123"]
+            mock_prompt.side_effect = [
+                "anthropic/claude-sonnet-4-5-20250929", "ANTHROPIC_API_KEY",
+                "sk-test123"
+            ]
 
             setup()
 
@@ -32,9 +39,10 @@ class TestConfigSetup:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
-            patch("minisweagent.run.extra.config.console.print"),
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.console.print"),
         ):
             mock_prompt.side_effect = ["gpt-4", "", ""]
 
@@ -52,9 +60,10 @@ class TestConfigSetup:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
-            patch("minisweagent.run.extra.config.console.print"),
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.console.print"),
         ):
             mock_prompt.side_effect = ["", "", ""]
 
@@ -70,13 +79,20 @@ class TestConfigSetup:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
-            patch("minisweagent.run.extra.config.console.print"),
-            patch.dict(os.environ, {"MSWEA_MODEL_NAME": "existing-model", "ANTHROPIC_API_KEY": "existing-key"}),
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.console.print"),
+                patch.dict(
+                    os.environ, {
+                        "MSWEA_MODEL_NAME": "existing-model",
+                        "ANTHROPIC_API_KEY": "existing-key"
+                    }),
         ):
             # When prompted, user accepts defaults (existing values)
-            mock_prompt.side_effect = ["existing-model", "ANTHROPIC_API_KEY", "existing-key"]
+            mock_prompt.side_effect = [
+                "existing-model", "ANTHROPIC_API_KEY", "existing-key"
+            ]
 
             setup()
 
@@ -89,9 +105,11 @@ class TestConfigSetup:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
-            patch("minisweagent.run.extra.config.console.print") as mock_print,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.console.print") as
+                mock_print,
         ):
             mock_prompt.side_effect = ["gpt-4", "OPENAI_API_KEY", ""]
 
@@ -114,7 +132,8 @@ class TestConfigSet:
         """Test set command when both key and value are provided as arguments."""
         config_file = tmp_path / ".env"
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             set("MSWEA_MODEL_NAME", "anthropic/claude-sonnet-4-5-20250929")
 
             assert config_file.exists()
@@ -126,8 +145,9 @@ class TestConfigSet:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
         ):
             mock_prompt.side_effect = ["TEST_KEY", "test_value"]
 
@@ -145,14 +165,16 @@ class TestConfigSet:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
         ):
             mock_prompt.return_value = "prompted_value"
 
             set("PROVIDED_KEY", None)
 
-            mock_prompt.assert_called_once_with("Enter the value for PROVIDED_KEY: ")
+            mock_prompt.assert_called_once_with(
+                "Enter the value for PROVIDED_KEY: ")
 
             content = config_file.read_text()
             assert "PROVIDED_KEY='prompted_value'" in content
@@ -162,8 +184,9 @@ class TestConfigSet:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
         ):
             mock_prompt.return_value = "prompted_key"
 
@@ -178,7 +201,8 @@ class TestConfigSet:
         """Test setting a key-value pair (legacy test for compatibility)."""
         config_file = tmp_path / ".env"
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             set("MSWEA_MODEL_NAME", "anthropic/claude-sonnet-4-5-20250929")
 
             assert config_file.exists()
@@ -189,7 +213,8 @@ class TestConfigSet:
         """Test setting an API key."""
         config_file = tmp_path / ".env"
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             set("ANTHROPIC_API_KEY", "sk-anthropic-test-key")
 
             content = config_file.read_text()
@@ -199,7 +224,8 @@ class TestConfigSet:
         """Test setting multiple keys in sequence."""
         config_file = tmp_path / ".env"
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             set("MSWEA_MODEL_NAME", "gpt-4")
             set("OPENAI_API_KEY", "sk-openai-test")
             set("MSWEA_GLOBAL_COST_LIMIT", "10.00")
@@ -212,9 +238,11 @@ class TestConfigSet:
     def test_set_overwrites_existing_key(self, tmp_path):
         """Test that setting a key overwrites existing value."""
         config_file = tmp_path / ".env"
-        config_file.write_text("MSWEA_MODEL_NAME=old-model\nOTHER_KEY=other-value\n")
+        config_file.write_text(
+            "MSWEA_MODEL_NAME=old-model\nOTHER_KEY=other-value\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             set("MSWEA_MODEL_NAME", "new-model")
 
             content = config_file.read_text()
@@ -228,8 +256,9 @@ class TestConfigSet:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
         ):
             mock_prompt.side_effect = ["EMPTY_KEY", ""]
 
@@ -245,9 +274,11 @@ class TestConfigUnset:
     def test_unset_with_argument_provided(self, tmp_path):
         """Test unset command when key is provided as argument."""
         config_file = tmp_path / ".env"
-        config_file.write_text("MSWEA_MODEL_NAME='gpt-4'\nOPENAI_API_KEY='sk-test123'\n")
+        config_file.write_text(
+            "MSWEA_MODEL_NAME='gpt-4'\nOPENAI_API_KEY='sk-test123'\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             unset("MSWEA_MODEL_NAME")
 
             content = config_file.read_text()
@@ -258,11 +289,13 @@ class TestConfigUnset:
     def test_unset_with_no_argument_prompts_for_key(self, tmp_path):
         """Test unset command when no argument provided - should prompt for key."""
         config_file = tmp_path / ".env"
-        config_file.write_text("TEST_KEY='test_value'\nOTHER_KEY='other_value'\n")
+        config_file.write_text(
+            "TEST_KEY='test_value'\nOTHER_KEY='other_value'\n")
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.prompt") as mock_prompt,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.prompt") as mock_prompt,
         ):
             mock_prompt.return_value = "TEST_KEY"
 
@@ -277,9 +310,11 @@ class TestConfigUnset:
     def test_unset_existing_key(self, tmp_path):
         """Test unsetting an existing key (legacy test for compatibility)."""
         config_file = tmp_path / ".env"
-        config_file.write_text("MSWEA_MODEL_NAME='gpt-4'\nOPENAI_API_KEY='sk-test123'\n")
+        config_file.write_text(
+            "MSWEA_MODEL_NAME='gpt-4'\nOPENAI_API_KEY='sk-test123'\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             unset("MSWEA_MODEL_NAME")
 
             content = config_file.read_text()
@@ -292,7 +327,8 @@ class TestConfigUnset:
         config_file = tmp_path / ".env"
         config_file.write_text("MSWEA_MODEL_NAME='gpt-4'\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             # Should not raise an exception
             unset("NONEXISTENT_KEY")
 
@@ -305,7 +341,8 @@ class TestConfigUnset:
         config_file = tmp_path / ".env"
         config_file.write_text("")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             # Should not raise an exception
             unset("ANY_KEY")
 
@@ -320,10 +357,10 @@ class TestConfigUnset:
             "MSWEA_MODEL_NAME='anthropic/claude-sonnet-4-5-20250929'\n"
             "ANTHROPIC_API_KEY='sk-anthropic-key'\n"
             "OPENAI_API_KEY='sk-openai-key'\n"
-            "MSWEA_CONFIGURED='true'\n"
-        )
+            "MSWEA_CONFIGURED='true'\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             unset("ANTHROPIC_API_KEY")
 
             content = config_file.read_text()
@@ -337,9 +374,12 @@ class TestConfigUnset:
     def test_unset_api_key_scenario(self, tmp_path):
         """Test unsetting an API key specifically."""
         config_file = tmp_path / ".env"
-        config_file.write_text("MSWEA_MODEL_NAME='gpt-4'\nOPENAI_API_KEY='sk-old-key'\nMSWEA_CONFIGURED='true'\n")
+        config_file.write_text(
+            "MSWEA_MODEL_NAME='gpt-4'\nOPENAI_API_KEY='sk-old-key'\nMSWEA_CONFIGURED='true'\n"
+        )
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             unset("OPENAI_API_KEY")
 
             content = config_file.read_text()
@@ -353,9 +393,11 @@ class TestConfigUnset:
     def test_unset_configured_flag(self, tmp_path):
         """Test unsetting the configured flag."""
         config_file = tmp_path / ".env"
-        config_file.write_text("MSWEA_MODEL_NAME='gpt-4'\nMSWEA_CONFIGURED='true'\n")
+        config_file.write_text(
+            "MSWEA_MODEL_NAME='gpt-4'\nMSWEA_CONFIGURED='true'\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             unset("MSWEA_CONFIGURED")
 
             content = config_file.read_text()
@@ -374,9 +416,10 @@ class TestConfigEdit:
         config_file.write_text("MSWEA_MODEL_NAME=test")
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("subprocess.run") as mock_run,
-            patch.dict(os.environ, {}, clear=True),  # Clear EDITOR env var
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("subprocess.run") as mock_run,
+                patch.dict(os.environ, {}, clear=True),  # Clear EDITOR env var
         ):
             edit()
 
@@ -388,9 +431,10 @@ class TestConfigEdit:
         config_file.write_text("MSWEA_MODEL_NAME=test")
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("subprocess.run") as mock_run,
-            patch.dict(os.environ, {"EDITOR": "vim"}),
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("subprocess.run") as mock_run,
+                patch.dict(os.environ, {"EDITOR": "vim"}),
         ):
             edit()
 
@@ -405,10 +449,13 @@ class TestConfigureIfFirstTime:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("minisweagent.run.extra.config.setup") as mock_setup,
-            patch("minisweagent.run.extra.config.console.print") as mock_print,
-            patch.dict(os.environ, {}, clear=True),  # Clear MSWEA_CONFIGURED
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("minisweagent.run.extra.config.setup") as mock_setup,
+                patch("minisweagent.run.extra.config.console.print") as
+                mock_print,
+                patch.dict(os.environ, {},
+                           clear=True),  # Clear MSWEA_CONFIGURED
         ):
             configure_if_first_time()
 
@@ -418,8 +465,8 @@ class TestConfigureIfFirstTime:
     def test_skip_configure_when_already_configured(self, tmp_path):
         """Test that setup is not called when MSWEA_CONFIGURED is set."""
         with (
-            patch("minisweagent.run.extra.config.setup") as mock_setup,
-            patch.dict(os.environ, {"MSWEA_CONFIGURED": "true"}),
+                patch("minisweagent.run.extra.config.setup") as mock_setup,
+                patch.dict(os.environ, {"MSWEA_CONFIGURED": "true"}),
         ):
             configure_if_first_time()
 
@@ -434,13 +481,14 @@ class TestTyperAppIntegration:
         config_file = tmp_path / ".env"
 
         with (
-            patch("minisweagent.run.extra.config.global_config_file", config_file),
-            patch("typer.Option") as mock_option,
+                patch("minisweagent.run.extra.config.global_config_file",
+                      config_file),
+                patch("typer.Option") as mock_option,
         ):
             # Mock the typer Option to return our test values
             mock_option.side_effect = (
-                lambda default, **kwargs: "OPENAI_API_KEY" if "key" in str(kwargs) else "sk-test-key"
-            )
+                lambda default, **kwargs: "OPENAI_API_KEY"
+                if "key" in str(kwargs) else "sk-test-key")
 
             # Call the set function directly (as the app would)
             set("OPENAI_API_KEY", "sk-test-key")
@@ -451,9 +499,11 @@ class TestTyperAppIntegration:
     def test_unset_command_via_typer(self, tmp_path):
         """Test the unset command through the Typer app."""
         config_file = tmp_path / ".env"
-        config_file.write_text("OPENAI_API_KEY='sk-test-key'\nMSWEA_MODEL_NAME='gpt-4'\n")
+        config_file.write_text(
+            "OPENAI_API_KEY='sk-test-key'\nMSWEA_MODEL_NAME='gpt-4'\n")
 
-        with patch("minisweagent.run.extra.config.global_config_file", config_file):
+        with patch("minisweagent.run.extra.config.global_config_file",
+                   config_file):
             # Call the unset function directly (as the app would)
             unset("OPENAI_API_KEY")
 

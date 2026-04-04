@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import logging
 from pathlib import Path
 
@@ -18,11 +20,15 @@ def _setup_root_logger() -> None:
     logger.addHandler(_handler)
 
 
-def add_file_handler(path: Path | str, level: int = logging.DEBUG, *, print_path: bool = True) -> None:
+def add_file_handler(path: Path | str,
+                     level: int = logging.DEBUG,
+                     *,
+                     print_path: bool = True) -> None:
     logger = logging.getLogger("minisweagent")
     handler = logging.FileHandler(path)
     handler.setLevel(level)
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)
     if print_path:
@@ -31,6 +37,5 @@ def add_file_handler(path: Path | str, level: int = logging.DEBUG, *, print_path
 
 _setup_root_logger()
 logger = logging.getLogger("minisweagent")
-
 
 __all__ = ["logger"]

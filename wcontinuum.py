@@ -1,11 +1,21 @@
-import requests, time, json
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
+import time
+
+import requests
 
 URL = "http://localhost:8100/v1/chat/completions"
 payload = {
-  "model": "meta-llama/Llama-3.1-8B-Instruct",
-  "messages": [{"role": "user", "content": "Write a 3-sentence summary of the moon."}],
-  "max_tokens": 128,
-  "temperature": 0,
+    "model":
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "messages": [{
+        "role": "user",
+        "content": "Write a 3-sentence summary of the moon."
+    }],
+    "max_tokens":
+    128,
+    "temperature":
+    0,
 }
 t0 = time.time()
 n = 10

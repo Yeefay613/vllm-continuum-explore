@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """This is what happens when you do `python -m minisweagent` or `pipx run mini-swe-agent`."""
 
 from minisweagent.run.mini import app

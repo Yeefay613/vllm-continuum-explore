@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import json
 import logging
 import os
@@ -5,16 +7,10 @@ from dataclasses import asdict, dataclass, field
 from typing import Any, Literal
 
 import requests
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
 from minisweagent.models import GLOBAL_MODEL_STATS
 from minisweagent.models.utils.cache_control import set_cache_control
+from tenacity import (before_sleep_log, retry, retry_if_not_exception_type,
+                      stop_after_attempt, wait_exponential)
 
 logger = logging.getLogger("openrouter_model")
 
@@ -46,6 +42,7 @@ class OpenRouterRateLimitError(Exception):
 
 
 class OpenRouterModel:
+
     def __init__(self, **kwargs):
         self.config = OpenRouterModelConfig(**kwargs)
         self.cost = 0.0
@@ -54,15 +51,14 @@ class OpenRouterModel:
         self._api_key = os.getenv("OPENROUTER_API_KEY", "")
 
     @retry(
-        stop=stop_after_attempt(int(os.getenv("MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT", "10"))),
+        stop=stop_after_attempt(
+            int(os.getenv("MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT", "10"))),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_not_exception_type(
-            (
-                OpenRouterAuthenticationError,
-                KeyboardInterrupt,
-            )
-        ),
+        retry=retry_if_not_exception_type((
+            OpenRouterAuthenticationError,
+            KeyboardInterrupt,
+        )),
     )
     def _query(self, messages: list[dict[str, str]], **kwargs):
         headers = {
@@ -73,12 +69,17 @@ class OpenRouterModel:
         payload = {
             "model": self.config.model_name,
             "messages": messages,
-            "usage": {"include": True},
+            "usage": {
+                "include": True
+            },
             **(self.config.model_kwargs | kwargs),
         }
 
         try:
-            response = requests.post(self._api_url, headers=headers, data=json.dumps(payload), timeout=60)
+            response = requests.post(self._api_url,
+                                     headers=headers,
+                                     data=json.dumps(payload),
+                                     timeout=60)
             response.raise_for_status()
             return response.json()
         except requests.exceptions.HTTPError as e:
@@ -88,13 +89,15 @@ class OpenRouterModel:
             elif response.status_code == 429:
                 raise OpenRouterRateLimitError("Rate limit exceeded") from e
             else:
-                raise OpenRouterAPIError(f"HTTP {response.status_code}: {response.text}") from e
+                raise OpenRouterAPIError(
+                    f"HTTP {response.status_code}: {response.text}") from e
         except requests.exceptions.RequestException as e:
             raise OpenRouterAPIError(f"Request failed: {e}") from e
 
     def query(self, messages: list[dict[str, str]], **kwargs) -> dict:
         if self.config.set_cache_control:
-            messages = set_cache_control(messages, mode=self.config.set_cache_control)
+            messages = set_cache_control(messages,
+                                         mode=self.config.set_cache_control)
         response = self._query(messages, **kwargs)
 
         # Extract cost from usage information
@@ -121,4 +124,7 @@ class OpenRouterModel:
         }
 
     def get_template_vars(self) -> dict[str, Any]:
-        return asdict(self.config) | {"n_model_calls": self.n_calls, "model_cost": self.cost}
+        return asdict(self.config) | {
+            "n_model_calls": self.n_calls,
+            "model_cost": self.cost
+        }

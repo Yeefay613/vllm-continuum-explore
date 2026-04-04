@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Utility to manage the global config file.
 
 You can also directly edit the `.env` file in the config directory.
@@ -9,12 +11,11 @@ import os
 import subprocess
 
 from dotenv import set_key, unset_key
+from minisweagent import global_config_file
 from prompt_toolkit import prompt
 from rich.console import Console
 from rich.rule import Rule
 from typer import Argument, Typer
-
-from minisweagent import global_config_file
 
 app = Typer(
     help=__doc__.format(global_config_file=global_config_file),  # type: ignore
@@ -23,7 +24,6 @@ app = Typer(
     add_completion=False,
 )
 console = Console(highlight=False)
-
 
 _SETUP_HELP = """To get started, we need to set up your global config file.
 
@@ -66,10 +66,12 @@ def setup():
     console.print(
         "[bold yellow]If you already have your API keys set as environment variables, you can ignore the next question.[/bold yellow]"
     )
-    key_name = prompt("Enter your API key name (e.g., ANTHROPIC_API_KEY): ").strip()
+    key_name = prompt(
+        "Enter your API key name (e.g., ANTHROPIC_API_KEY): ").strip()
     key_value = None
     if key_name:
-        key_value = prompt("Enter your API key value (e.g., sk-1234567890): ", default=os.getenv(key_name, "")).strip()
+        key_value = prompt("Enter your API key value (e.g., sk-1234567890): ",
+                           default=os.getenv(key_name, "")).strip()
         if key_value:
             set_key(global_config_file, key_name, key_value)
     if not key_value:
@@ -84,8 +86,8 @@ def setup():
 
 @app.command()
 def set(
-    key: str | None = Argument(None, help="The key to set"),
-    value: str | None = Argument(None, help="The value to set"),
+        key: str | None = Argument(None, help="The key to set"),
+        value: str | None = Argument(None, help="The value to set"),
 ):
     """Set a key in the global config file."""
     if key is None:

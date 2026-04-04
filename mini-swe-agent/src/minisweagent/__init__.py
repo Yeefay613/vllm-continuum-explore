@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """
 This file provides:
 
@@ -15,14 +17,14 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import dotenv
+from minisweagent.utils.log import logger
 from platformdirs import user_config_dir
 from rich.console import Console
 
-from minisweagent.utils.log import logger
-
 package_dir = Path(__file__).resolve().parent
 
-global_config_dir = Path(os.getenv("MSWEA_GLOBAL_CONFIG_DIR") or user_config_dir("mini-swe-agent"))
+global_config_dir = Path(
+    os.getenv("MSWEA_GLOBAL_CONFIG_DIR") or user_config_dir("mini-swe-agent"))
 global_config_dir.mkdir(parents=True, exist_ok=True)
 global_config_file = Path(global_config_dir) / ".env"
 
@@ -32,7 +34,6 @@ if not os.getenv("MSWEA_SILENT_STARTUP"):
         f"Loading global config from [bold green]'{global_config_file}'[/bold green]"
     )
 dotenv.load_dotenv(dotenv_path=global_config_file)
-
 
 # === Protocols ===
 # You can ignore them unless you want static type checking.
@@ -45,9 +46,11 @@ class Model(Protocol):
     cost: float
     n_calls: int
 
-    def query(self, messages: list[dict[str, str]], **kwargs) -> dict: ...
+    def query(self, messages: list[dict[str, str]], **kwargs) -> dict:
+        ...
 
-    def get_template_vars(self) -> dict[str, Any]: ...
+    def get_template_vars(self) -> dict[str, Any]:
+        ...
 
 
 class Environment(Protocol):
@@ -55,9 +58,11 @@ class Environment(Protocol):
 
     config: Any
 
-    def execute(self, command: str, cwd: str = "") -> dict[str, str]: ...
+    def execute(self, command: str, cwd: str = "") -> dict[str, str]:
+        ...
 
-    def get_template_vars(self) -> dict[str, Any]: ...
+    def get_template_vars(self) -> dict[str, Any]:
+        ...
 
 
 class Agent(Protocol):
@@ -68,7 +73,8 @@ class Agent(Protocol):
     messages: list[dict[str, str]]
     config: Any
 
-    def run(self, task: str, **kwargs) -> tuple[str, str]: ...
+    def run(self, task: str, **kwargs) -> tuple[str, str]:
+        ...
 
 
 __all__ = [

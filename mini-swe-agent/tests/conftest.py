@@ -1,9 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import json
 import threading
 from pathlib import Path
 
 import pytest
-
 from minisweagent.models import GLOBAL_MODEL_STATS
 
 # Global lock for tests that modify global state - this works across threads
@@ -29,7 +30,8 @@ def reset_global_stats():
 
 def get_test_data(trajectory_name: str) -> dict[str, list[str]]:
     """Load test fixtures from a trajectory JSON file"""
-    json_path = Path(__file__).parent / "test_data" / f"{trajectory_name}.traj.json"
+    json_path = Path(
+        __file__).parent / "test_data" / f"{trajectory_name}.traj.json"
     with json_path.open() as f:
         trajectory = json.load(f)
 
@@ -47,7 +49,10 @@ def get_test_data(trajectory_name: str) -> dict[str, list[str]]:
         elif message["role"] == "user":
             expected_observations.append(message["content"])
 
-    return {"model_responses": model_responses, "expected_observations": expected_observations}
+    return {
+        "model_responses": model_responses,
+        "expected_observations": expected_observations
+    }
 
 
 @pytest.fixture

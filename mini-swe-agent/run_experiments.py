@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """
 实验脚本：自动运行不同scheduling_policy和jps参数组合的实验
 """
-import subprocess
-import time
+import logging
 import os
 import signal
+import subprocess
 import sys
+import time
 from pathlib import Path
-from typing import List, Dict
-import logging
 
 # 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 # ==================== 配置区域 ====================
@@ -42,20 +41,20 @@ class ProcessManager:
     """进程管理器"""
 
     def __init__(self):
-        self.processes: List[subprocess.Popen] = []
-        self.log_files: List = []
+        self.processes: list[subprocess.Popen] = []
+        self.log_files: list = []
 
     def start_vllm_server(self, gpu_devices: str, port: int,
-                         scheduling_policy: str, name: str) -> subprocess.Popen:
+                          scheduling_policy: str,
+                          name: str) -> subprocess.Popen:
         """启动vllm服务器"""
         env = os.environ.copy()
         env["CUDA_VISIBLE_DEVICES"] = gpu_devices
 
         cmd = [
-            "vllm", "serve", MODEL_NAME,
-            "--scheduling-policy", scheduling_policy,
-            "--port", str(port),
-            "--tensor-parallel-size", "4"
+            "vllm", "serve", MODEL_NAME, "--scheduling-policy",
+            scheduling_policy, "--port",
+            str(port), "--tensor-parallel-size", "4"
         ]
 
         log_file = open(f"{name}.log", "w")
@@ -84,12 +83,10 @@ class ProcessManager:
 
         logger.info(f"启动 router: {' '.join(cmd)}")
 
-        process = subprocess.Popen(
-            cmd,
-            stdout=log_file,
-            stderr=subprocess.STDOUT,
-            preexec_fn=os.setsid
-        )
+        process = subprocess.Popen(cmd,
+                                   stdout=log_file,
+                                   stderr=subprocess.STDOUT,
+                                   preexec_fn=os.setsid)
 
         self.processes.append(process)
         return process
@@ -109,7 +106,8 @@ class ProcessManager:
                         process.wait(timeout=10)
                     except subprocess.TimeoutExpired:
                         # 如果进程没有终止，强制杀死
-                        logger.warning(f"进程 {process.pid} 未响应SIGTERM，发送SIGKILL")
+                        logger.warning(
+                            f"进程 {process.pid} 未响应SIGTERM，发送SIGKILL")
                         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
                         process.wait()
             except Exception as e:
@@ -127,7 +125,9 @@ class ProcessManager:
         logger.info("所有进程已清理")
 
 
-def wait_for_server(port: int, max_retries: int = 30, interval: int = 2) -> bool:
+def wait_for_server(port: int,
+                    max_retries: int = 30,
+                    interval: int = 2) -> bool:
     """等待服务器启动"""
     import socket
 
@@ -158,14 +158,14 @@ def run_experiment(scheduling_policy: str, jps: float) -> bool:
     pm = ProcessManager()
 
     try:
-        logger.info("="*70)
+        logger.info("=" * 70)
         logger.info(f"开始实验: scheduling_policy={scheduling_policy}, jps={jps}")
-        logger.info("="*70)
+        logger.info("=" * 70)
 
         # 1. 启动第一个vllm服务器
         logger.info("步骤 1/6: 启动第一个vllm服务器 (GPU 0,1,2,3, Port 8001)")
         pm.start_vllm_server("0,1,2,3", PORT_1, scheduling_policy,
-                            f"vllm_server_1_{scheduling_policy}_{jps}")
+                             f"vllm_server_1_{scheduling_policy}_{jps}")
         time.sleep(VLLM_STARTUP_WAIT)
         if not wait_for_server(PORT_1):
             logger.error("第一个vllm服务器启动失败")
@@ -174,7 +174,7 @@ def run_experiment(scheduling_policy: str, jps: float) -> bool:
         # 2. 启动第二个vllm服务器
         logger.info("步骤 2/6: 启动第二个vllm服务器 (GPU 4,5,6,7, Port 8002)")
         pm.start_vllm_server("4,5,6,7", PORT_2, scheduling_policy,
-                            f"vllm_server_2_{scheduling_policy}_{jps}")
+                             f"vllm_server_2_{scheduling_policy}_{jps}")
         time.sleep(VLLM_STARTUP_WAIT)
         if not wait_for_server(PORT_2):
             logger.error("第二个vllm服务器启动失败")
@@ -197,25 +197,19 @@ def run_experiment(scheduling_policy: str, jps: float) -> bool:
         output_dir = f"./swebench_router_jps{jps}_scheduling{scheduling_policy}"
 
         cmd = [
-            "mini-extra", "swebench",
-            "--model-class", "vllm",
-            "--model", MODEL_NAME,
-            "--port", str(ROUTER_PORT),
-            "--subset", "verified",
-            "--split", "test",
-            "--use-jps",
-            "--jps", str(jps),
-            "--output", output_dir
+            "mini-extra", "swebench", "--model-class", "vllm", "--model",
+            MODEL_NAME, "--port",
+            str(ROUTER_PORT), "--subset", "verified", "--split", "test",
+            "--use-jps", "--jps",
+            str(jps), "--output", output_dir
         ]
 
         logger.info(f"命令: {' '.join(cmd)}")
 
         with open(f"swebench_{scheduling_policy}_{jps}.log", "w") as log_file:
-            result = subprocess.run(
-                cmd,
-                stdout=log_file,
-                stderr=subprocess.STDOUT
-            )
+            result = subprocess.run(cmd,
+                                    stdout=log_file,
+                                    stderr=subprocess.STDOUT)
 
         if result.returncode != 0:
             logger.error(f"mini-extra swebench 执行失败，返回码: {result.returncode}")
@@ -227,24 +221,22 @@ def run_experiment(scheduling_policy: str, jps: float) -> bool:
         logger.info("步骤 6/6: 运行分析脚本")
 
         # 确保输出目录存在
-        result_dir = Path(OUTPUT_BASE_DIR) / f"swebench_router_jps{jps}_scheduling{scheduling_policy}"
+        result_dir = Path(
+            OUTPUT_BASE_DIR
+        ) / f"swebench_router_jps{jps}_scheduling{scheduling_policy}"
         result_dir.mkdir(parents=True, exist_ok=True)
         result_file = result_dir / "result.txt"
 
         analyze_cmd = [
-            "python",
-            "continuum_exp/analyze_client.py",
-            f"{output_dir}/"
+            "python", "continuum_exp/analyze_client.py", f"{output_dir}/"
         ]
 
         logger.info(f"分析命令: {' '.join(analyze_cmd)}")
 
         with open(result_file, "w") as output_file:
-            result = subprocess.run(
-                analyze_cmd,
-                stdout=output_file,
-                stderr=subprocess.STDOUT
-            )
+            result = subprocess.run(analyze_cmd,
+                                    stdout=output_file,
+                                    stderr=subprocess.STDOUT)
 
         if result.returncode != 0:
             logger.warning(f"分析脚本执行返回码: {result.returncode}")
@@ -269,14 +261,14 @@ def run_experiment(scheduling_policy: str, jps: float) -> bool:
 
 def main():
     """主函数"""
-    logger.info("="*70)
+    logger.info("=" * 70)
     logger.info("实验脚本启动")
-    logger.info("="*70)
+    logger.info("=" * 70)
     logger.info(f"工作目录: {WORKSPACE_DIR}")
     logger.info(f"Scheduling policies: {SCHEDULING_POLICIES}")
     logger.info(f"JPS values: {JPS_VALUES}")
     logger.info(f"总共 {len(SCHEDULING_POLICIES) * len(JPS_VALUES)} 个实验组合")
-    logger.info("="*70)
+    logger.info("=" * 70)
 
     # 创建输出目录
     Path(OUTPUT_BASE_DIR).mkdir(parents=True, exist_ok=True)
@@ -298,10 +290,14 @@ def main():
 
             if success:
                 success_count += 1
-                logger.info(f"✓ 实验成功: scheduling_policy={scheduling_policy}, jps={jps}")
+                logger.info(
+                    f"✓ 实验成功: scheduling_policy={scheduling_policy}, jps={jps}"
+                )
             else:
                 fail_count += 1
-                logger.error(f"✗ 实验失败: scheduling_policy={scheduling_policy}, jps={jps}")
+                logger.error(
+                    f"✗ 实验失败: scheduling_policy={scheduling_policy}, jps={jps}"
+                )
 
             # 实验之间的间隔
             if experiment_num < total_experiments:
@@ -309,10 +305,10 @@ def main():
                 time.sleep(15)
 
     # 打印总结
-    logger.info("\n" + "="*70)
+    logger.info("\n" + "=" * 70)
     logger.info("所有实验完成!")
     logger.info(f"成功: {success_count}, 失败: {fail_count}")
-    logger.info("="*70)
+    logger.info("=" * 70)
 
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import re
 import subprocess
 import sys
 from unittest.mock import Mock, patch
 
 import pytest
-
 from minisweagent.run.mini import DEFAULT_CONFIG, app, main
 
 
@@ -17,12 +18,15 @@ def strip_ansi_codes(text: str) -> str:
 def test_configure_if_first_time_called():
     """Test that configure_if_first_time is called when running mini main."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time") as mock_configure,
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time") as
+            mock_configure,
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -32,7 +36,13 @@ def test_configure_if_first_time_called():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -57,12 +67,14 @@ def test_configure_if_first_time_called():
 def test_mini_command_calls_run_interactive():
     """Test that mini command creates InteractiveAgent when visual=False."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -72,7 +84,14 @@ def test_mini_command_calls_run_interactive():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test",
+                "mode": "confirm"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -102,12 +121,14 @@ def test_mini_command_calls_run_interactive():
 def test_mini_v_command_calls_run_textual():
     """Test that mini -v command creates TextualAgent when visual=True."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.TextualAgent") as mock_textual_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.TextualAgent") as
+            mock_textual_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -117,7 +138,14 @@ def test_mini_v_command_calls_run_textual():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test",
+                "mode": "confirm"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -147,13 +175,16 @@ def test_mini_v_command_calls_run_textual():
 def test_mini_calls_prompt_when_no_task_provided():
     """Test that mini calls prompt when no task is provided."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.prompt_session.prompt") as mock_prompt,
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.prompt_session.prompt") as
+            mock_prompt,
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_prompt.return_value = "User provided task"
@@ -164,7 +195,14 @@ def test_mini_calls_prompt_when_no_task_provided():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test",
+                "mode": "confirm"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -194,13 +232,16 @@ def test_mini_calls_prompt_when_no_task_provided():
 def test_mini_v_calls_prompt_when_no_task_provided():
     """Test that mini -v calls prompt when no task is provided."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.prompt_session.prompt") as mock_prompt,
-        patch("minisweagent.run.mini.TextualAgent") as mock_textual_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.prompt_session.prompt") as
+            mock_prompt,
+            patch("minisweagent.run.mini.TextualAgent") as
+            mock_textual_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_prompt.return_value = "User provided visual task"
@@ -211,7 +252,14 @@ def test_mini_v_calls_prompt_when_no_task_provided():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test", "mode": "confirm"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test",
+                "mode": "confirm"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -241,12 +289,14 @@ def test_mini_v_calls_prompt_when_no_task_provided():
 def test_mini_with_explicit_model():
     """Test that mini works with explicitly provided model."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -257,9 +307,14 @@ def test_mini_with_explicit_model():
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
         mock_yaml_load.return_value = {
-            "agent": {"system_template": "test", "mode": "yolo"},
+            "agent": {
+                "system_template": "test",
+                "mode": "yolo"
+            },
             "env": {},
-            "model": {"default_config": "test"},
+            "model": {
+                "default_config": "test"
+            },
         }
 
         # Setup mock agent instance
@@ -279,7 +334,8 @@ def test_mini_with_explicit_model():
         )
 
         # Verify get_model was called with the explicit model
-        mock_get_model.assert_called_once_with("gpt-4", {"default_config": "test"})
+        mock_get_model.assert_called_once_with("gpt-4",
+                                               {"default_config": "test"})
 
         # Verify InteractiveAgent was instantiated
         mock_interactive_agent_class.assert_called_once()
@@ -290,12 +346,14 @@ def test_mini_with_explicit_model():
 def test_yolo_mode_sets_correct_agent_config():
     """Test that yolo mode sets the correct agent configuration."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -305,7 +363,13 @@ def test_yolo_mode_sets_correct_agent_config():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -335,12 +399,14 @@ def test_yolo_mode_sets_correct_agent_config():
 def test_confirm_mode_sets_correct_agent_config():
     """Test that when yolo=False, no explicit mode is set (defaults to None)."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -350,7 +416,13 @@ def test_confirm_mode_sets_correct_agent_config():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -535,12 +607,14 @@ def test_mini_extra_config_help():
 def test_exit_immediately_flag_sets_confirm_exit_false():
     """Test that --exit-immediately flag sets confirm_exit to False in agent config."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -550,7 +624,13 @@ def test_exit_immediately_flag_sets_confirm_exit_false():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Create mock agent with config
         mock_agent = Mock()
@@ -577,12 +657,14 @@ def test_exit_immediately_flag_sets_confirm_exit_false():
 def test_no_exit_immediately_flag_sets_confirm_exit_true():
     """Test that when --exit-immediately flag is not used, confirm_exit defaults to True."""
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
     ):
         # Setup mocks
         mock_model = Mock()
@@ -592,7 +674,13 @@ def test_no_exit_immediately_flag_sets_confirm_exit_true():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Create mock agent with config
         mock_agent = Mock()
@@ -620,13 +708,15 @@ def test_exit_immediately_flag_with_typer_runner():
     from typer.testing import CliRunner
 
     with (
-        patch("minisweagent.run.mini.configure_if_first_time"),
-        patch("minisweagent.run.mini.InteractiveAgent") as mock_interactive_agent_class,
-        patch("minisweagent.run.mini.get_model") as mock_get_model,
-        patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
-        patch("minisweagent.run.mini.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
-        patch("minisweagent.run.mini.save_traj"),
+            patch("minisweagent.run.mini.configure_if_first_time"),
+            patch("minisweagent.run.mini.InteractiveAgent") as
+            mock_interactive_agent_class,
+            patch("minisweagent.run.mini.get_model") as mock_get_model,
+            patch("minisweagent.run.mini.LocalEnvironment") as mock_env,
+            patch("minisweagent.run.mini.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.mini.yaml.safe_load") as mock_yaml_load,
+            patch("minisweagent.run.mini.save_traj"),
     ):
         # Setup mocks
         mock_model = Mock()
@@ -636,7 +726,13 @@ def test_exit_immediately_flag_with_typer_runner():
         mock_config_path = Mock()
         mock_config_path.read_text.return_value = ""
         mock_get_config_path.return_value = mock_config_path
-        mock_yaml_load.return_value = {"agent": {"system_template": "test"}, "env": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {
+                "system_template": "test"
+            },
+            "env": {},
+            "model": {}
+        }
 
         # Setup mock agent instance
         mock_agent = Mock()
@@ -648,7 +744,10 @@ def test_exit_immediately_flag_with_typer_runner():
         mock_interactive_agent_class.return_value = mock_agent
 
         runner = CliRunner()
-        result = runner.invoke(app, ["--task", "Test task", "--exit-immediately", "--model", "test-model"])
+        result = runner.invoke(app, [
+            "--task", "Test task", "--exit-immediately", "--model",
+            "test-model"
+        ])
 
         assert result.exit_code == 0
         mock_interactive_agent_class.assert_called_once()

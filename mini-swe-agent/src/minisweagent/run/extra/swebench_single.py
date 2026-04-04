@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Run on a single SWE-Bench instance."""
 
 import traceback
@@ -6,15 +8,11 @@ from pathlib import Path
 import typer
 import yaml
 from datasets import load_dataset
-
 from minisweagent import global_config_dir
 from minisweagent.agents.interactive import InteractiveAgent
 from minisweagent.config import builtin_config_dir, get_config_path
 from minisweagent.models import get_model
-from minisweagent.run.extra.swebench import (
-    DATASET_MAPPING,
-    get_sb_environment,
-)
+from minisweagent.run.extra.swebench import DATASET_MAPPING, get_sb_environment
 from minisweagent.run.utils.save import save_traj
 from minisweagent.utils.log import logger
 
@@ -52,7 +50,8 @@ def main(
     logger.info(f"Loading agent config from '{config_path}'")
     config = yaml.safe_load(config_path.read_text())
     if environment_class is not None:
-        config.setdefault("environment", {})["environment_class"] = environment_class
+        config.setdefault("environment",
+                          {})["environment_class"] = environment_class
     if model_class is not None:
         config.setdefault("model", {})["model_class"] = model_class
     if exit_immediately:
@@ -61,18 +60,26 @@ def main(
     agent = InteractiveAgent(
         get_model(model_name, config.get("model", {})),
         env,
-        **({"mode": "yolo"} | config.get("agent", {})),
+        **({
+            "mode": "yolo"
+        } | config.get("agent", {})),
     )
 
     exit_status, result, extra_info = None, None, None
     try:
-        exit_status, result = agent.run(instance["problem_statement"])  # type: ignore[arg-type]
+        exit_status, result = agent.run(
+            instance["problem_statement"])  # type: ignore[arg-type]
     except Exception as e:
-        logger.error(f"Error processing instance {instance_spec}: {e}", exc_info=True)
+        logger.error(f"Error processing instance {instance_spec}: {e}",
+                     exc_info=True)
         exit_status, result = type(e).__name__, str(e)
         extra_info = {"traceback": traceback.format_exc()}
     finally:
-        save_traj(agent, output, exit_status=exit_status, result=result, extra_info=extra_info)  # type: ignore[arg-type]
+        save_traj(agent,
+                  output,
+                  exit_status=exit_status,
+                  result=result,
+                  extra_info=extra_info)  # type: ignore[arg-type]
 
 
 if __name__ == "__main__":

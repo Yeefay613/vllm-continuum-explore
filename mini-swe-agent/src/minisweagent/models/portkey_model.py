@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import json
 import logging
 import os
@@ -6,16 +8,10 @@ from pathlib import Path
 from typing import Any, Literal
 
 import litellm
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
 from minisweagent.models import GLOBAL_MODEL_STATS
 from minisweagent.models.utils.cache_control import set_cache_control
+from tenacity import (before_sleep_log, retry, retry_if_not_exception_type,
+                      stop_after_attempt, wait_exponential)
 
 logger = logging.getLogger("portkey_model")
 
@@ -29,7 +25,8 @@ except ImportError:
 class PortkeyModelConfig:
     model_name: str
     model_kwargs: dict[str, Any] = field(default_factory=dict)
-    litellm_model_registry: Path | str | None = os.getenv("LITELLM_MODEL_REGISTRY_PATH")
+    litellm_model_registry: Path | str | None = os.getenv(
+        "LITELLM_MODEL_REGISTRY_PATH")
     """We currently use litellm to calculate costs. Here you can register additional models to litellm's model registry.
     Note that this might change if we get better support for Portkey and change how we calculate costs.
     """
@@ -43,6 +40,7 @@ class PortkeyModelConfig:
 
 
 class PortkeyModel:
+
     def __init__(self, **kwargs):
         if Portkey is None:
             raise ImportError(
@@ -51,8 +49,11 @@ class PortkeyModel:
         self.config = PortkeyModelConfig(**kwargs)
         self.cost = 0.0
         self.n_calls = 0
-        if self.config.litellm_model_registry and Path(self.config.litellm_model_registry).is_file():
-            litellm.utils.register_model(json.loads(Path(self.config.litellm_model_registry).read_text()))
+        if self.config.litellm_model_registry and Path(
+                self.config.litellm_model_registry).is_file():
+            litellm.utils.register_model(
+                json.loads(
+                    Path(self.config.litellm_model_registry).read_text()))
 
         # Get API key from environment or raise error
         self._api_key = os.getenv("PORTKEY_API_KEY")
@@ -60,8 +61,7 @@ class PortkeyModel:
             raise ValueError(
                 "Portkey API key is required. Set it via the "
                 "PORTKEY_API_KEY environment variable. You can permanently set it with "
-                "`mini-extra config set PORTKEY_API_KEY YOUR_KEY`."
-            )
+                "`mini-extra config set PORTKEY_API_KEY YOUR_KEY`.")
 
         # Get virtual key from environment
         virtual_key = os.getenv("PORTKEY_VIRTUAL_KEY")
@@ -74,10 +74,12 @@ class PortkeyModel:
         self.client = Portkey(**client_kwargs)
 
     @retry(
-        stop=stop_after_attempt(int(os.getenv("MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT", "10"))),
+        stop=stop_after_attempt(
+            int(os.getenv("MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT", "10"))),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_not_exception_type((KeyboardInterrupt, TypeError, ValueError)),
+        retry=retry_if_not_exception_type(
+            (KeyboardInterrupt, TypeError, ValueError)),
     )
     def _query(self, messages: list[dict[str, str]], **kwargs):
         # return self.client.with_options(metadata={"request_id": request_id}).chat.completions.create(
@@ -89,7 +91,8 @@ class PortkeyModel:
 
     def query(self, messages: list[dict[str, str]], **kwargs) -> dict:
         if self.config.set_cache_control:
-            messages = set_cache_control(messages, mode=self.config.set_cache_control)
+            messages = set_cache_control(messages,
+                                         mode=self.config.set_cache_control)
         response = self._query(messages, **kwargs)
         response_for_cost_calc = response.model_copy()
         if self.config.litellm_model_name_override:
@@ -114,13 +117,12 @@ class PortkeyModel:
                 f"WARNING: Total tokens - prompt tokens - completion tokens != 0: {response_for_cost_calc.model_dump()}."
                 " This is probably a portkey bug or incompatibility with litellm cost tracking. "
                 "Setting prompt tokens based on total tokens and completion tokens. You might want to double check your costs. "
-                f"Full response: {response_for_cost_calc.model_dump()}"
-            )
+                f"Full response: {response_for_cost_calc.model_dump()}")
             response_for_cost_calc.usage.prompt_tokens = total_tokens - completion_tokens
         try:
             cost = litellm.cost_calculator.completion_cost(
-                response_for_cost_calc, model=self.config.litellm_model_name_override or None
-            )
+                response_for_cost_calc,
+                model=self.config.litellm_model_name_override or None)
         except Exception as e:
             logger.critical(
                 f"Error calculating cost for model {self.config.model_name} based on {response_for_cost_calc.model_dump()}: {e}. "
@@ -143,4 +145,7 @@ class PortkeyModel:
         }
 
     def get_template_vars(self) -> dict[str, Any]:
-        return asdict(self.config) | {"n_model_calls": self.n_calls, "model_cost": self.cost}
+        return asdict(self.config) | {
+            "n_model_calls": self.n_calls,
+            "model_cost": self.cost
+        }

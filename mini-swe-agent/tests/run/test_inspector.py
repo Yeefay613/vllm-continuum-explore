@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import json
 import tempfile
 from pathlib import Path
@@ -5,7 +7,6 @@ from unittest.mock import patch
 
 import pytest
 import typer
-
 from minisweagent.run.inspector import TrajectoryInspector, main
 
 
@@ -16,10 +17,16 @@ def get_screen_text(app: TrajectoryInspector) -> str:
     def _append_visible_static_text(container):
         for static_widget in container.query("Static"):
             if static_widget.display:
-                if hasattr(static_widget, "content") and static_widget.content:  # type: ignore[attr-defined]
-                    text_parts.append(str(static_widget.content))  # type: ignore[attr-defined]
-                elif hasattr(static_widget, "renderable") and static_widget.renderable:  # type: ignore[attr-defined]
-                    text_parts.append(str(static_widget.renderable))  # type: ignore[attr-defined]
+                if hasattr(
+                        static_widget, "content"
+                ) and static_widget.content:  # type: ignore[attr-defined]
+                    text_parts.append(str(
+                        static_widget.content))  # type: ignore[attr-defined]
+                elif hasattr(
+                        static_widget, "renderable"
+                ) and static_widget.renderable:  # type: ignore[attr-defined]
+                    text_parts.append(str(static_widget.renderable)
+                                      )  # type: ignore[attr-defined]
 
     # Get all Static widgets in the main content container
     content_container = app.query_one("#content")
@@ -32,13 +39,27 @@ def get_screen_text(app: TrajectoryInspector) -> str:
 def sample_simple_trajectory():
     """Sample trajectory in simple format (list of messages)."""
     return [
-        {"role": "system", "content": "You are a helpful assistant."},
-        {"role": "user", "content": "Hello, solve this problem."},
-        {"role": "assistant", "content": "I'll help you solve this.\n\n```bash\nls -la\n```"},
-        {"role": "user", "content": "Command output here."},
+        {
+            "role": "system",
+            "content": "You are a helpful assistant."
+        },
+        {
+            "role": "user",
+            "content": "Hello, solve this problem."
+        },
         {
             "role": "assistant",
-            "content": "Now I'll finish.\n\n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```",
+            "content": "I'll help you solve this.\n\n```bash\nls -la\n```"
+        },
+        {
+            "role": "user",
+            "content": "Command output here."
+        },
+        {
+            "role":
+            "assistant",
+            "content":
+            "Now I'll finish.\n\n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```",
         },
     ]
 
@@ -47,24 +68,53 @@ def sample_simple_trajectory():
 def sample_swebench_trajectory():
     """Sample trajectory in SWEBench format (dict with messages array)."""
     return {
-        "instance_id": "test-instance-1",
+        "instance_id":
+        "test-instance-1",
         "info": {
             "exit_status": "Submitted",
             "submission": "Fixed the issue",
-            "model_stats": {"instance_cost": 0.05, "api_calls": 3},
+            "model_stats": {
+                "instance_cost": 0.05,
+                "api_calls": 3
+            },
         },
         "messages": [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": [{"type": "text", "text": "Please solve this issue."}]},
-            {"role": "assistant", "content": "I'll analyze the issue.\n\n```bash\ncat file.py\n```"},
-            {"role": "user", "content": [{"type": "text", "text": "File contents here."}]},
-            {"role": "assistant", "content": "Fixed!\n\n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```"},
+            {
+                "role": "system",
+                "content": "You are a helpful assistant."
+            },
+            {
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": "Please solve this issue."
+                }]
+            },
+            {
+                "role": "assistant",
+                "content":
+                "I'll analyze the issue.\n\n```bash\ncat file.py\n```"
+            },
+            {
+                "role": "user",
+                "content": [{
+                    "type": "text",
+                    "text": "File contents here."
+                }]
+            },
+            {
+                "role":
+                "assistant",
+                "content":
+                "Fixed!\n\n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```"
+            },
         ],
     }
 
 
 @pytest.fixture
-def temp_trajectory_files(sample_simple_trajectory, sample_swebench_trajectory):
+def temp_trajectory_files(sample_simple_trajectory,
+                          sample_swebench_trajectory):
     """Create temporary trajectory files for testing."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -75,7 +125,8 @@ def temp_trajectory_files(sample_simple_trajectory, sample_swebench_trajectory):
 
         # SWEBench format trajectory
         swebench_file = temp_path / "swebench.traj.json"
-        swebench_file.write_text(json.dumps(sample_swebench_trajectory, indent=2))
+        swebench_file.write_text(
+            json.dumps(sample_swebench_trajectory, indent=2))
 
         # Invalid JSON file
         invalid_file = temp_path / "invalid.traj.json"
@@ -87,7 +138,9 @@ def temp_trajectory_files(sample_simple_trajectory, sample_swebench_trajectory):
 @pytest.mark.slow
 async def test_trajectory_inspector_basic_navigation(temp_trajectory_files):
     """Test basic step navigation in trajectory inspector."""
-    valid_files = [f for f in temp_trajectory_files if f.name != "invalid.traj.json"]
+    valid_files = [
+        f for f in temp_trajectory_files if f.name != "invalid.traj.json"
+    ]
 
     app = TrajectoryInspector(valid_files)
 
@@ -110,7 +163,8 @@ async def test_trajectory_inspector_basic_navigation(temp_trajectory_files):
         await pilot.press("$")
         assert "Step 3/3" in app.title
         assert "MINI-SWE-AGENT" in get_screen_text(app)
-        assert "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" in get_screen_text(app)
+        assert "echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT" in get_screen_text(
+            app)
 
         # Navigate back to first step
         await pilot.press("0")
@@ -125,9 +179,12 @@ async def test_trajectory_inspector_basic_navigation(temp_trajectory_files):
 
 
 @pytest.mark.slow
-async def test_trajectory_inspector_trajectory_navigation(temp_trajectory_files):
+async def test_trajectory_inspector_trajectory_navigation(
+        temp_trajectory_files):
     """Test navigation between different trajectory files."""
-    valid_files = [f for f in temp_trajectory_files if f.name != "invalid.traj.json"]
+    valid_files = [
+        f for f in temp_trajectory_files if f.name != "invalid.traj.json"
+    ]
 
     app = TrajectoryInspector(valid_files)
 
@@ -162,7 +219,9 @@ async def test_trajectory_inspector_trajectory_navigation(temp_trajectory_files)
 @pytest.mark.slow
 async def test_trajectory_inspector_swebench_format(temp_trajectory_files):
     """Test that SWEBench format trajectories are handled correctly."""
-    valid_files = [f for f in temp_trajectory_files if f.name != "invalid.traj.json"]
+    valid_files = [
+        f for f in temp_trajectory_files if f.name != "invalid.traj.json"
+    ]
 
     app = TrajectoryInspector(valid_files)
 
@@ -182,7 +241,9 @@ async def test_trajectory_inspector_swebench_format(temp_trajectory_files):
 @pytest.mark.slow
 async def test_trajectory_inspector_scrolling(temp_trajectory_files):
     """Test scrolling behavior in trajectory inspector."""
-    valid_files = [f for f in temp_trajectory_files if f.name != "invalid.traj.json"]
+    valid_files = [
+        f for f in temp_trajectory_files if f.name != "invalid.traj.json"
+    ]
 
     app = TrajectoryInspector(valid_files)
 
@@ -220,7 +281,9 @@ async def test_trajectory_inspector_empty_trajectory():
 
 async def test_trajectory_inspector_invalid_file(temp_trajectory_files):
     """Test inspector behavior with invalid JSON file."""
-    invalid_file = [f for f in temp_trajectory_files if f.name == "invalid.traj.json"][0]
+    invalid_file = [
+        f for f in temp_trajectory_files if f.name == "invalid.traj.json"
+    ][0]
 
     # Mock notify to capture error messages
     app = TrajectoryInspector([invalid_file])
@@ -233,7 +296,8 @@ async def test_trajectory_inspector_invalid_file(temp_trajectory_files):
     assert app.steps == []
 
 
-def test_trajectory_inspector_load_trajectory_formats(sample_simple_trajectory, sample_swebench_trajectory):
+def test_trajectory_inspector_load_trajectory_formats(
+        sample_simple_trajectory, sample_swebench_trajectory):
     """Test loading different trajectory formats."""
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
@@ -262,7 +326,11 @@ def test_trajectory_inspector_unrecognized_format():
 
         # Create file with unrecognized format
         unrecognized_file = temp_path / "unrecognized.traj.json"
-        unrecognized_file.write_text(json.dumps({"some": "other", "format": True}))
+        unrecognized_file.write_text(
+            json.dumps({
+                "some": "other",
+                "format": True
+            }))
 
         app = TrajectoryInspector([unrecognized_file])
 
@@ -300,7 +368,9 @@ async def test_trajectory_inspector_css_loading():
 @pytest.mark.slow
 async def test_trajectory_inspector_quit_binding(temp_trajectory_files):
     """Test quit functionality."""
-    valid_files = [f for f in temp_trajectory_files if f.name != "invalid.traj.json"]
+    valid_files = [
+        f for f in temp_trajectory_files if f.name != "invalid.traj.json"
+    ]
 
     app = TrajectoryInspector(valid_files)
 
@@ -327,7 +397,8 @@ def test_main_with_single_file(mock_run, temp_trajectory_files):
 
 
 @patch("minisweagent.run.inspector.TrajectoryInspector.run")
-def test_main_with_directory_containing_trajectories(mock_run, temp_trajectory_files):
+def test_main_with_directory_containing_trajectories(mock_run,
+                                                     temp_trajectory_files):
     """Test main function with a directory containing trajectory files."""
     directory = temp_trajectory_files[0].parent
 
@@ -345,7 +416,8 @@ def test_main_with_directory_no_trajectories(mock_run):
         (temp_path / "other.json").write_text('{"not": "trajectory"}')
         (temp_path / "readme.txt").write_text("some text")
 
-        with pytest.raises(typer.BadParameter, match="No trajectory files found"):
+        with pytest.raises(typer.BadParameter,
+                           match="No trajectory files found"):
             main(str(temp_dir))
 
         mock_run.assert_not_called()

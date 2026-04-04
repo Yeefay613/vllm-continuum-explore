@@ -1,7 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 from unittest.mock import patch
 
 import pytest
-
 from minisweagent import package_dir
 from minisweagent.models.test_models import DeterministicModel
 from minisweagent.run.extra.swebench_single import main
@@ -15,9 +16,12 @@ def test_swebench_single_end_to_end(github_test_data, tmp_path):
 
     model_responses = github_test_data["model_responses"]
 
-    with patch("minisweagent.run.extra.swebench_single.get_model") as mock_get_model:
-        with patch("minisweagent.agents.interactive.prompt_session.prompt", return_value=""):  # No new task
-            mock_get_model.return_value = DeterministicModel(outputs=model_responses, cost_per_call=0.1)
+    with patch("minisweagent.run.extra.swebench_single.get_model"
+               ) as mock_get_model:
+        with patch("minisweagent.agents.interactive.prompt_session.prompt",
+                   return_value=""):  # No new task
+            mock_get_model.return_value = DeterministicModel(
+                outputs=model_responses, cost_per_call=0.1)
 
             # Test with explicit instance ID
             main(
@@ -36,7 +40,8 @@ def test_swebench_single_end_to_end(github_test_data, tmp_path):
 
 
 @pytest.mark.slow
-def test_swebench_single_end_to_end_exit_immediately(github_test_data, tmp_path):
+def test_swebench_single_end_to_end_exit_immediately(github_test_data,
+                                                     tmp_path):
     """Test the swebench_single script using the _test subset with deterministic model.
     This mostly tests that no exception occurs.
     This test uses the --exit-immediately flag to exit immediately when the agent wants to finish instead of prompting.
@@ -44,8 +49,10 @@ def test_swebench_single_end_to_end_exit_immediately(github_test_data, tmp_path)
 
     model_responses = github_test_data["model_responses"]
 
-    with patch("minisweagent.run.extra.swebench_single.get_model") as mock_get_model:
-        mock_get_model.return_value = DeterministicModel(outputs=model_responses, cost_per_call=0.1)
+    with patch("minisweagent.run.extra.swebench_single.get_model"
+               ) as mock_get_model:
+        mock_get_model.return_value = DeterministicModel(
+            outputs=model_responses, cost_per_call=0.1)
 
         # Test with explicit instance ID
         main(

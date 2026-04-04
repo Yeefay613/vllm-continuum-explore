@@ -370,7 +370,7 @@ class ResponsesRequest(OpenAIBaseModel):
             extra_args["is_last_step"] = self.is_last_step
         if self.this_func_call is not None:
             extra_args["this_func_call"] = self.this_func_call
-        
+
         return SamplingParams.from_optional(
             temperature=temperature,
             top_p=top_p,
@@ -735,7 +735,7 @@ class ChatCompletionRequest(OpenAIBaseModel):
             extra_args["is_last_step"] = self.is_last_step
         if self.this_func_call is not None:
             extra_args["this_func_call"] = self.this_func_call
-        
+
         print(f"extra_args: {extra_args}")
         return SamplingParams.from_optional(
             n=self.n,

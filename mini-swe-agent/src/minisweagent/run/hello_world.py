@@ -1,9 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import os
 from pathlib import Path
 
 import typer
 import yaml
-
 from minisweagent import package_dir
 from minisweagent.agents.default import DefaultAgent
 from minisweagent.environments.local import LocalEnvironment
@@ -14,7 +15,12 @@ app = typer.Typer()
 
 @app.command()
 def main(
-    task: str = typer.Option(..., "-t", "--task", help="Task/problem statement", show_default=False, prompt=True),
+    task: str = typer.Option(...,
+                             "-t",
+                             "--task",
+                             help="Task/problem statement",
+                             show_default=False,
+                             prompt=True),
     model_name: str = typer.Option(
         os.getenv("MSWEA_MODEL_NAME"),
         "-m",
@@ -26,7 +32,9 @@ def main(
     agent = DefaultAgent(
         LitellmModel(model_name=model_name),
         LocalEnvironment(),
-        **yaml.safe_load(Path(package_dir / "config" / "default.yaml").read_text())["agent"],
+        **yaml.safe_load(
+            Path(package_dir / "config" /
+                 "default.yaml").read_text())["agent"],
     )
     agent.run(task)
     return agent

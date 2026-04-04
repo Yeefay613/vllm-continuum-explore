@@ -1,11 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import asyncio
 import logging
 import threading
 from unittest.mock import Mock
 
 import pytest
-
-from minisweagent.agents.interactive_textual import AddLogEmitCallback, SmartInputContainer, TextualAgent
+from minisweagent.agents.interactive_textual import (AddLogEmitCallback,
+                                                     SmartInputContainer,
+                                                     TextualAgent)
 from minisweagent.environments.local import LocalEnvironment
 from minisweagent.models.test_models import DeterministicModel
 
@@ -17,10 +20,16 @@ def get_screen_text(app: TextualAgent) -> str:
     def _append_visible_static_text(container):
         for static_widget in container.query("Static"):
             if static_widget.display:
-                if hasattr(static_widget, "content") and static_widget.content:  # type: ignore[attr-defined]
-                    text_parts.append(str(static_widget.content))  # type: ignore[attr-defined]
-                elif hasattr(static_widget, "renderable") and static_widget.renderable:  # type: ignore[attr-defined]
-                    text_parts.append(str(static_widget.renderable))  # type: ignore[attr-defined]
+                if hasattr(
+                        static_widget, "content"
+                ) and static_widget.content:  # type: ignore[attr-defined]
+                    text_parts.append(str(
+                        static_widget.content))  # type: ignore[attr-defined]
+                elif hasattr(
+                        static_widget, "renderable"
+                ) and static_widget.renderable:  # type: ignore[attr-defined]
+                    text_parts.append(str(static_widget.renderable)
+                                      )  # type: ignore[attr-defined]
 
     # Get all Static widgets in the main content container
     content_container = app.query_one("#content")
@@ -65,8 +74,7 @@ async def test_everything_integration_test():
                 "THOUGHTT 6\n ```bash\necho '6'\n```",  # step 7
                 "FINISHING\n ```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
                 "FINISHING2\n ```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
-            ],
-        ),
+            ], ),
         env=LocalEnvironment(),
         mode="confirm",
         cost_limit=10.0,
@@ -74,10 +82,12 @@ async def test_everything_integration_test():
     assert app.agent.config.confirm_exit
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("What's up?"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("What's up?"),
+                         daemon=True).start()
         await pilot.pause(0.2)
         assert app.agent_state == "RUNNING"
-        assert "You are a helpful assistant that can do anything." in get_screen_text(app)
+        assert "You are a helpful assistant that can do anything." in get_screen_text(
+            app)
         assert "press enter" not in get_screen_text(app).lower()
         assert "Step 1/1" in app.title
 
@@ -87,7 +97,8 @@ async def test_everything_integration_test():
         assert app.agent_state == "AWAITING_INPUT"
         assert "AWAITING_INPUT" in app.title
         assert "echo '1'" in get_screen_text(app)
-        assert "press enter to confirm or provide rejection reason" in get_screen_text(app).lower()
+        assert "press enter to confirm or provide rejection reason" in get_screen_text(
+            app).lower()
 
         print(">>> Confirm directly with enter first and we move on to page 3")
         print(get_screen_text(app))
@@ -96,7 +107,9 @@ async def test_everything_integration_test():
         print("---")
         print(get_screen_text(app))
         print("--- if we didn't follow, here's some cluses")
-        print(f"{pilot.app.i_step=}, {pilot.app.n_steps=}, {pilot.app._vscroll.scroll_target_y=}")  # type: ignore
+        print(
+            f"{pilot.app.i_step=}, {pilot.app.n_steps=}, {pilot.app._vscroll.scroll_target_y=}"
+        )  # type: ignore
         assert "Step 3/3" in app.title
 
         print(">>> Now, let's navigate to page 1")
@@ -104,17 +117,25 @@ async def test_everything_integration_test():
         await pilot.press("h")  # --> 2/3
         await pilot.press("h")
         assert "Step 1/3" in app.title
-        assert "You are a helpful assistant that can do anything." in get_screen_text(app)
+        assert "You are a helpful assistant that can do anything." in get_screen_text(
+            app)
         assert "press enter" not in get_screen_text(app).lower()
         await pilot.press("h")
         # should remain on same page
         assert "Step 1/3" in app.title
-        assert "You are a helpful assistant that can do anything." in get_screen_text(app)
+        assert "You are a helpful assistant that can do anything." in get_screen_text(
+            app)
 
-        print(">>> Back to current latest page, because we're stilling waiting for confirmation")
-        await pilot.press("l")  # no need for escape, because confirmation is only on last page
+        print(
+            ">>> Back to current latest page, because we're stilling waiting for confirmation"
+        )
+        await pilot.press(
+            "l"
+        )  # no need for escape, because confirmation is only on last page
         assert "Step 2/3" in app.title
-        await pilot.press("l")  # no need for escape, because confirmation is only on last page
+        await pilot.press(
+            "l"
+        )  # no need for escape, because confirmation is only on last page
         assert "Step 3/3" in app.title
         assert "AWAITING_INPUT" in app.title
         assert "echo '2'" in get_screen_text(app)
@@ -143,7 +164,8 @@ async def test_everything_integration_test():
         assert pilot.app.agent.config.mode == "human"  # type: ignore[attr-defined]
         await pilot.pause(0.2)
         print(get_screen_text(app))
-        assert "User switched to manual mode, this command will be ignored" in get_screen_text(app)
+        assert "User switched to manual mode, this command will be ignored" in get_screen_text(
+            app)
         assert "Enter your command" in get_screen_text(app)
         assert "Step 5/5" in app.title  # we didn't move because waiting for human command
 
@@ -165,7 +187,8 @@ async def test_everything_integration_test():
         # next action will be executed automatically, so we see step 6 next
         await pilot.pause(0.2)
         assert "Step 10/10" in app.title
-        assert "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'" in get_screen_text(app)
+        assert "echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'" in get_screen_text(
+            app)
         # await pilot.pause(0.1)
         # assert "press enter" not in get_screen_text(app).lower()
         print(get_screen_text(app))
@@ -175,7 +198,8 @@ async def test_everything_integration_test():
         await pilot.press("escape")
         await pilot.press("0")
         assert "Step 1/10" in app.title
-        assert "You are a helpful assistant that can do anything." in get_screen_text(app)
+        assert "You are a helpful assistant that can do anything." in get_screen_text(
+            app)
 
         print(">>> Directly navigate to step 9")
         await pilot.press("$")
@@ -208,26 +232,62 @@ def test_messages_to_steps_edge_cases():
 
     # User message ends a step
     messages = [
-        {"role": "system", "content": "System"},
-        {"role": "assistant", "content": "Assistant"},
-        {"role": "user", "content": "User1"},
-        {"role": "assistant", "content": "Assistant2"},
-        {"role": "user", "content": "User2"},
+        {
+            "role": "system",
+            "content": "System"
+        },
+        {
+            "role": "assistant",
+            "content": "Assistant"
+        },
+        {
+            "role": "user",
+            "content": "User1"
+        },
+        {
+            "role": "assistant",
+            "content": "Assistant2"
+        },
+        {
+            "role": "user",
+            "content": "User2"
+        },
     ]
     expected = [
         [
-            {"role": "system", "content": "System"},
-            {"role": "assistant", "content": "Assistant"},
-            {"role": "user", "content": "User1"},
+            {
+                "role": "system",
+                "content": "System"
+            },
+            {
+                "role": "assistant",
+                "content": "Assistant"
+            },
+            {
+                "role": "user",
+                "content": "User1"
+            },
         ],
-        [{"role": "assistant", "content": "Assistant2"}, {"role": "user", "content": "User2"}],
+        [{
+            "role": "assistant",
+            "content": "Assistant2"
+        }, {
+            "role": "user",
+            "content": "User2"
+        }],
     ]
     assert _messages_to_steps(messages) == expected
 
     # No user messages (incomplete step)
     messages = [
-        {"role": "system", "content": "System"},
-        {"role": "assistant", "content": "Assistant"},
+        {
+            "role": "system",
+            "content": "System"
+        },
+        {
+            "role": "assistant",
+            "content": "Assistant"
+        },
     ]
     expected = [messages]
     assert _messages_to_steps(messages) == expected
@@ -242,7 +302,8 @@ async def test_empty_agent_content():
     )
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Empty test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Empty test"),
+                         daemon=True).start()
         # Initially should show waiting message
         await pilot.pause(0.1)
         content = get_screen_text(app)
@@ -252,13 +313,11 @@ async def test_empty_agent_content():
 async def test_log_message_filtering():
     """Test that warning and error log messages trigger notifications."""
     app = TextualAgent(
-        model=DeterministicModel(
-            outputs=[
-                "/warning Test warning message",
-                "Normal response",
-                "end: \n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```",
-            ]
-        ),
+        model=DeterministicModel(outputs=[
+            "/warning Test warning message",
+            "Normal response",
+            "end: \n```bash\necho COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT\n```",
+        ]),
         env=LocalEnvironment(),
         mode="yolo",
     )
@@ -268,32 +327,43 @@ async def test_log_message_filtering():
 
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Log test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Log test"),
+                         daemon=True).start()
         await pilot.pause(0.2)
 
         # Verify warning was emitted and handled (note the extra space in the actual format)
-        app.notify.assert_any_call("[WARNING]  Test warning message", severity="warning")
+        app.notify.assert_any_call("[WARNING]  Test warning message",
+                                   severity="warning")
 
 
 async def test_list_content_rendering():
     """Test rendering of messages with list content vs string content."""
     # Create a model that will add messages with list content
     app = TextualAgent(
-        model=DeterministicModel(
-            outputs=["Simple response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"]
-        ),
+        model=DeterministicModel(outputs=[
+            "Simple response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"
+        ]),
         env=LocalEnvironment(),
         mode="yolo",
     )
 
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Content test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Content test"),
+                         daemon=True).start()
         # Wait for the agent to finish its normal operation
         await pilot.pause(0.2)
 
         # Now manually add a message with list content to test rendering
-        app.agent.messages.append({"role": "assistant", "content": [{"text": "Line 1"}, {"text": "Line 2"}]})
+        app.agent.messages.append({
+            "role":
+            "assistant",
+            "content": [{
+                "text": "Line 1"
+            }, {
+                "text": "Line 2"
+            }]
+        })
 
         # Trigger the message update logic to refresh step count and navigate to last step
         app.on_message_added()
@@ -307,14 +377,16 @@ async def test_list_content_rendering():
 async def test_confirmation_rejection_with_message():
     """Test rejecting an action with a custom message."""
     app = TextualAgent(
-        model=DeterministicModel(outputs=["Test thought\n```bash\necho 'test'\n```"]),
+        model=DeterministicModel(
+            outputs=["Test thought\n```bash\necho 'test'\n```"]),
         env=LocalEnvironment(),
         mode="confirm",
     )
 
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Rejection test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Rejection test"),
+                         daemon=True).start()
         await pilot.pause(0.1)
 
         # Wait for input prompt
@@ -342,7 +414,8 @@ async def test_agent_with_cost_limit():
     app.notify = Mock()
 
     async with app.run_test() as pilot:
-        threading.Thread(target=lambda: app.agent.run("Cost limit test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Cost limit test"),
+                         daemon=True).start()
         for _ in range(50):
             await pilot.pause(0.1)
             if app.agent_state == "STOPPED":
@@ -352,13 +425,15 @@ async def test_agent_with_cost_limit():
 
         # Should eventually stop due to cost limit and notify with the exit status
         assert app.agent_state == "STOPPED"
-        app.notify.assert_called_with("Agent finished with status: LimitsExceeded")
+        app.notify.assert_called_with(
+            "Agent finished with status: LimitsExceeded")
 
 
 async def test_agent_with_step_limit():
     """Test agent behavior when step limit is exceeded."""
     app = TextualAgent(
-        model=DeterministicModel(outputs=["Response 1", "Response 2", "Response 3"]),
+        model=DeterministicModel(
+            outputs=["Response 1", "Response 2", "Response 3"]),
         env=LocalEnvironment(),
         mode="yolo",
         step_limit=2,
@@ -367,7 +442,8 @@ async def test_agent_with_step_limit():
     app.notify = Mock()
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Step limit test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Step limit test"),
+                         daemon=True).start()
         for _ in range(50):
             await pilot.pause(0.1)
             if app.agent_state == "STOPPED":
@@ -375,15 +451,16 @@ async def test_agent_with_step_limit():
         else:
             raise AssertionError("Agent did not stop within 5 seconds")
         assert app.agent_state == "STOPPED"
-        app.notify.assert_called_with("Agent finished with status: LimitsExceeded")
+        app.notify.assert_called_with(
+            "Agent finished with status: LimitsExceeded")
 
 
 async def test_whitelist_actions_bypass_confirmation():
     """Test that whitelisted actions bypass confirmation."""
     app = TextualAgent(
-        model=DeterministicModel(
-            outputs=["Whitelisted action\n```bash\necho 'safe' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"]
-        ),
+        model=DeterministicModel(outputs=[
+            "Whitelisted action\n```bash\necho 'safe' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"
+        ]),
         env=LocalEnvironment(),
         mode="confirm",
         whitelist_actions=[r"echo.*"],
@@ -391,7 +468,8 @@ async def test_whitelist_actions_bypass_confirmation():
 
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Whitelist test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Whitelist test"),
+                         daemon=True).start()
         await pilot.pause(0.2)
 
         # Should execute without confirmation because echo is whitelisted
@@ -402,19 +480,18 @@ async def test_whitelist_actions_bypass_confirmation():
 async def test_input_container_multiple_actions():
     """Test input container handling multiple actions in sequence."""
     app = TextualAgent(
-        model=DeterministicModel(
-            outputs=[
-                "First action\n```bash\necho '1'\n```",
-                "Second action\n```bash\necho '2' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
-            ]
-        ),
+        model=DeterministicModel(outputs=[
+            "First action\n```bash\necho '1'\n```",
+            "Second action\n```bash\necho '2' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
+        ]),
         env=LocalEnvironment(),
         mode="confirm",
     )
 
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("Multiple actions test"), daemon=True).start()
+        threading.Thread(target=lambda: app.agent.run("Multiple actions test"),
+                         daemon=True).start()
         await pilot.pause(0.1)
 
         # Confirm first action
@@ -436,9 +513,9 @@ def test_log_handler_cleanup():
     initial_handlers = len(logging.getLogger().handlers)
 
     app = TextualAgent(
-        model=DeterministicModel(
-            outputs=["Simple response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"]
-        ),
+        model=DeterministicModel(outputs=[
+            "Simple response\n```bash\necho 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```"
+        ]),
         env=LocalEnvironment(),
         mode="yolo",
     )
@@ -467,9 +544,13 @@ def test_add_log_emit_callback():
     handler = AddLogEmitCallback(test_callback)
 
     # Create a log record
-    record = logging.LogRecord(
-        name="test", level=logging.WARNING, pathname="test.py", lineno=1, msg="Test message", args=(), exc_info=None
-    )
+    record = logging.LogRecord(name="test",
+                               level=logging.WARNING,
+                               pathname="test.py",
+                               lineno=1,
+                               msg="Test message",
+                               args=(),
+                               exc_info=None)
 
     handler.emit(record)
 
@@ -480,18 +561,18 @@ def test_add_log_emit_callback():
 async def test_yolo_mode_confirms_pending_action():
     """Test that pressing 'y' to switch to YOLO mode also confirms any pending action."""
     app = TextualAgent(
-        model=DeterministicModel(
-            outputs=[
-                "Action requiring confirmation\n```bash\necho 'test' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
-            ]
-        ),
+        model=DeterministicModel(outputs=[
+            "Action requiring confirmation\n```bash\necho 'test' && echo 'COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT'\n```",
+        ]),
         env=LocalEnvironment(),
         mode="confirm",
     )
 
     async with app.run_test() as pilot:
         # Start the agent with the task
-        threading.Thread(target=lambda: app.agent.run("YOLO confirmation test"), daemon=True).start()
+        threading.Thread(
+            target=lambda: app.agent.run("YOLO confirmation test"),
+            daemon=True).start()
         await pilot.pause(0.1)
 
         # Wait for input prompt
@@ -502,7 +583,8 @@ async def test_yolo_mode_confirms_pending_action():
         assert app.agent.config.mode == "confirm"
         assert app.agent_state == "AWAITING_INPUT"
         assert "echo 'test'" in get_screen_text(app)
-        assert "press enter to confirm or provide rejection reason" in get_screen_text(app).lower()
+        assert "press enter to confirm or provide rejection reason" in get_screen_text(
+            app).lower()
 
         # Press 'y' to switch to YOLO mode - first escape from input focus
         await pilot.press("escape")

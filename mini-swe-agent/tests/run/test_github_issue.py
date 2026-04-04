@@ -1,8 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import re
 from unittest.mock import patch
 
 import pytest
-
 from minisweagent.models.test_models import DeterministicModel
 from minisweagent.run.github_issue import DEFAULT_CONFIG, main
 
@@ -16,7 +17,8 @@ def normalize_outputs(s: str) -> str:
     return "\n".join(line.rstrip() for line in s.strip().split("\n"))
 
 
-def assert_observations_match(expected_observations: list[str], messages: list[dict]) -> None:
+def assert_observations_match(expected_observations: list[str],
+                              messages: list[dict]) -> None:
     """Compare expected observations with actual observations from agent messages
 
     Args:
@@ -35,7 +37,8 @@ def assert_observations_match(expected_observations: list[str], messages: list[d
         f"Expected {len(expected_observations)} observations, got {len(actual_observations)}"
     )
 
-    for i, (expected_observation, actual_observation) in enumerate(zip(expected_observations, actual_observations)):
+    for i, (expected_observation, actual_observation) in enumerate(
+            zip(expected_observations, actual_observations)):
         normalized_actual = normalize_outputs(actual_observation)
         normalized_expected = normalize_outputs(expected_observation)
 
@@ -47,23 +50,35 @@ def assert_observations_match(expected_observations: list[str], messages: list[d
 def test_configure_if_first_time_called():
     """Test that configure_if_first_time is called when running github_issue main."""
     with (
-        patch("minisweagent.run.github_issue.configure_if_first_time") as mock_configure,
-        patch("minisweagent.run.github_issue.fetch_github_issue") as mock_fetch,
-        patch("minisweagent.run.github_issue.InteractiveAgent") as mock_agent,
-        patch("minisweagent.run.github_issue.get_model"),
-        patch("minisweagent.run.github_issue.DockerEnvironment"),
-        patch("minisweagent.run.github_issue.yaml.safe_load") as mock_yaml_load,
-        patch("minisweagent.run.github_issue.get_config_path") as mock_get_config_path,
-        patch("minisweagent.run.github_issue.save_traj"),
+            patch("minisweagent.run.github_issue.configure_if_first_time") as
+            mock_configure,
+            patch("minisweagent.run.github_issue.fetch_github_issue") as
+            mock_fetch,
+            patch("minisweagent.run.github_issue.InteractiveAgent") as
+            mock_agent,
+            patch("minisweagent.run.github_issue.get_model"),
+            patch("minisweagent.run.github_issue.DockerEnvironment"),
+            patch("minisweagent.run.github_issue.yaml.safe_load") as
+            mock_yaml_load,
+            patch("minisweagent.run.github_issue.get_config_path") as
+            mock_get_config_path,
+            patch("minisweagent.run.github_issue.save_traj"),
     ):
         mock_fetch.return_value = "Test issue"
-        mock_yaml_load.return_value = {"agent": {}, "environment": {}, "model": {}}
+        mock_yaml_load.return_value = {
+            "agent": {},
+            "environment": {},
+            "model": {}
+        }
         mock_get_config_path.return_value.read_text.return_value = "test config"
         mock_agent_instance = mock_agent.return_value
         mock_agent_instance.run.return_value = (0, "success")
         mock_agent_instance.env.execute.return_value = None
 
-        main(issue_url="https://github.com/test/repo/issues/1", config=DEFAULT_CONFIG, model="test-model", yolo=True)
+        main(issue_url="https://github.com/test/repo/issues/1",
+             config=DEFAULT_CONFIG,
+             model="test-model",
+             yolo=True)
 
         mock_configure.assert_called_once()
 
@@ -76,13 +91,18 @@ def test_github_issue_end_to_end(github_test_data):
     expected_observations = github_test_data["expected_observations"]
 
     with (
-        patch("minisweagent.run.github_issue.configure_if_first_time"),
-        patch("minisweagent.run.github_issue.get_model") as mock_get_model,
-        patch("minisweagent.agents.interactive.prompt_session.prompt", return_value=""),  # No new task
+            patch("minisweagent.run.github_issue.configure_if_first_time"),
+            patch("minisweagent.run.github_issue.get_model") as mock_get_model,
+            patch("minisweagent.agents.interactive.prompt_session.prompt",
+                  return_value=""),  # No new task
     ):
-        mock_get_model.return_value = DeterministicModel(outputs=model_responses)
+        mock_get_model.return_value = DeterministicModel(
+            outputs=model_responses)
         github_url = "https://github.com/SWE-agent/test-repo/issues/1"
-        agent = main(issue_url=github_url, model="tardis", config=DEFAULT_CONFIG, yolo=True)  # type: ignore
+        agent = main(issue_url=github_url,
+                     model="tardis",
+                     config=DEFAULT_CONFIG,
+                     yolo=True)  # type: ignore
 
     assert agent is not None
     messages = agent.messages
@@ -90,10 +110,11 @@ def test_github_issue_end_to_end(github_test_data):
     # Verify we have the right number of messages
     # Should be: system + user (initial) + (assistant + user) * number_of_steps
     expected_total_messages = 2 + (len(model_responses) * 2)
-    assert len(messages) == expected_total_messages, f"Expected {expected_total_messages} messages, got {len(messages)}"
+    assert len(
+        messages
+    ) == expected_total_messages, f"Expected {expected_total_messages} messages, got {len(messages)}"
 
     assert_observations_match(expected_observations, messages)
 
     assert agent.model.n_calls == len(model_responses), (
-        f"Expected {len(model_responses)} steps, got {agent.model.n_calls}"
-    )
+        f"Expected {len(model_responses)} steps, got {agent.model.n_calls}")

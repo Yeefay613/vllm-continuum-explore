@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Basic agent class. See https://mini-swe-agent.com/latest/advanced/control_flow/ for visual explanation."""
 
 import concurrent.futures
@@ -8,7 +10,6 @@ from collections.abc import Callable
 from dataclasses import asdict, dataclass
 
 from jinja2 import StrictUndefined, Template
-
 from minisweagent import Environment, Model
 
 
@@ -65,7 +66,13 @@ class JobTimeoutError(TerminatingException):
 
 
 class DefaultAgent:
-    def __init__(self, model: Model, env: Environment, *, config_class: Callable = AgentConfig, **kwargs):
+
+    def __init__(self,
+                 model: Model,
+                 env: Environment,
+                 *,
+                 config_class: Callable = AgentConfig,
+                 **kwargs):
         self.config = config_class(**kwargs)
         self.messages: list[dict] = []
         self.model = model
@@ -75,10 +82,12 @@ class DefaultAgent:
         self._executor: concurrent.futures.ThreadPoolExecutor | None = None
 
     def render_template(self, template: str, **kwargs) -> str:
-        template_vars = asdict(self.config) | self.env.get_template_vars() | self.model.get_template_vars()
-        return Template(template, undefined=StrictUndefined).render(
-            **kwargs, **template_vars, **self.extra_template_vars
-        )
+        template_vars = asdict(self.config) | self.env.get_template_vars(
+        ) | self.model.get_template_vars()
+        return Template(
+            template,
+            undefined=StrictUndefined).render(**kwargs, **template_vars,
+                                              **self.extra_template_vars)
 
     def add_message(self, role: str, content: str, **kwargs):
         self.messages.append({"role": role, "content": content, **kwargs})
@@ -101,8 +110,10 @@ class DefaultAgent:
         self._executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
         try:
-            self.add_message("system", self.render_template(self.config.system_template))
-            self.add_message("user", self.render_template(self.config.instance_template))
+            self.add_message("system",
+                             self.render_template(self.config.system_template))
+            self.add_message(
+                "user", self.render_template(self.config.instance_template))
             while True:
                 try:
                     self.step()
@@ -138,12 +149,12 @@ class DefaultAgent:
             try:
                 response = future.result(timeout=remaining_time)
             except concurrent.futures.TimeoutError:
-                elapsed_time = time.time() - self.job_start_time if self.job_start_time else 0
+                elapsed_time = time.time(
+                ) - self.job_start_time if self.job_start_time else 0
                 raise JobTimeoutError(
                     f"Job execution exceeded the maximum allowed time of {self.config.job_timeout:.0f} seconds "
                     f"({self.config.job_timeout/60:.1f} minutes). Elapsed time: {elapsed_time:.1f} seconds. "
-                    f"Timeout occurred during model query."
-                )
+                    f"Timeout occurred during model query.")
             except Exception as e:
                 # Check if this is a ContextLengthExceededError from vLLM model
                 if type(e).__name__ == "ContextLengthExceededError":
@@ -167,32 +178,44 @@ class DefaultAgent:
     def get_observation(self, response: dict) -> dict:
         """Execute the action and return the observation."""
         output = self.execute_action(self.parse_action(response))
-        observation = self.render_template(self.config.action_observation_template, output=output)
+        observation = self.render_template(
+            self.config.action_observation_template, output=output)
         self.add_message("user", observation)
         return output
 
     def parse_action(self, response: dict) -> dict:
         """Parse the action from the message. Returns the action."""
-        actions = re.findall(r"```bash\s*\n(.*?)\n```", response["content"], re.DOTALL)
+        actions = re.findall(r"```bash\s*\n(.*?)\n```", response["content"],
+                             re.DOTALL)
         if len(actions) == 1:
             return {"action": actions[0].strip(), **response}
-        raise FormatError(self.render_template(self.config.format_error_template, actions=actions))
+        raise FormatError(
+            self.render_template(self.config.format_error_template,
+                                 actions=actions))
 
     def execute_action(self, action: dict) -> dict:
         try:
             output = self.env.execute(action["action"])
         except subprocess.TimeoutExpired as e:
-            output = e.output.decode("utf-8", errors="replace") if e.output else ""
+            output = e.output.decode("utf-8",
+                                     errors="replace") if e.output else ""
             raise ExecutionTimeoutError(
-                self.render_template(self.config.timeout_template, action=action, output=output)
-            )
+                self.render_template(self.config.timeout_template,
+                                     action=action,
+                                     output=output))
         except TimeoutError:
-            raise ExecutionTimeoutError(self.render_template(self.config.timeout_template, action=action, output=""))
+            raise ExecutionTimeoutError(
+                self.render_template(self.config.timeout_template,
+                                     action=action,
+                                     output=""))
         self.has_finished(output)
         return output
 
     def has_finished(self, output: dict[str, str]):
         """Raises Submitted exception with final output if the agent has finished its task."""
         lines = output.get("output", "").lstrip().splitlines(keepends=True)
-        if lines and lines[0].strip() in ["MINI_SWE_AGENT_FINAL_OUTPUT", "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"]:
+        if lines and lines[0].strip() in [
+                "MINI_SWE_AGENT_FINAL_OUTPUT",
+                "COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT"
+        ]:
             raise Submitted("".join(lines[1:]))

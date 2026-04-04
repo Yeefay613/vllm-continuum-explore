@@ -1,27 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import os
 import subprocess
 from unittest.mock import patch
 
 import pytest
-
-from minisweagent.environments.docker import DockerEnvironment, DockerEnvironmentConfig
+from minisweagent.environments.docker import (DockerEnvironment,
+                                              DockerEnvironmentConfig)
 
 
 def is_docker_available():
     """Check if Docker is available and running."""
     try:
-        subprocess.run(["docker", "version"], capture_output=True, check=True, timeout=5)
+        subprocess.run(["docker", "version"],
+                       capture_output=True,
+                       check=True,
+                       timeout=5)
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+    except (subprocess.CalledProcessError, FileNotFoundError,
+            subprocess.TimeoutExpired):
         return False
 
 
 def is_podman_available():
     """Check if Podman is available and running."""
     try:
-        subprocess.run(["podman", "version"], capture_output=True, check=True, timeout=5)
+        subprocess.run(["podman", "version"],
+                       capture_output=True,
+                       check=True,
+                       timeout=5)
         return True
-    except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+    except (subprocess.CalledProcessError, FileNotFoundError,
+            subprocess.TimeoutExpired):
         return False
 
 
@@ -29,12 +39,14 @@ def is_podman_available():
 environment_params = [
     pytest.param(
         "docker",
-        marks=pytest.mark.skipif(not is_docker_available(), reason="Docker not available"),
+        marks=pytest.mark.skipif(not is_docker_available(),
+                                 reason="Docker not available"),
         id="docker",
     ),
     pytest.param(
         "podman",
-        marks=pytest.mark.skipif(not is_podman_available(), reason="Podman not available"),
+        marks=pytest.mark.skipif(not is_podman_available(),
+                                 reason="Podman not available"),
         id="podman",
     ),
 ]
@@ -43,7 +55,8 @@ environment_params = [
 @pytest.mark.parametrize("executable", environment_params)
 def test_docker_environment_config_defaults(executable):
     """Test that DockerEnvironmentConfig has correct default values."""
-    config = DockerEnvironmentConfig(image="python:3.11", executable=executable)
+    config = DockerEnvironmentConfig(image="python:3.11",
+                                     executable=executable)
 
     assert config.image == "python:3.11"
     assert config.cwd == "/"
@@ -71,9 +84,12 @@ def test_docker_environment_basic_execution(executable):
 @pytest.mark.parametrize("executable", environment_params)
 def test_docker_environment_set_env_variables(executable):
     """Test setting environment variables in the container."""
-    env = DockerEnvironment(
-        image="python:3.11", executable=executable, env={"TEST_VAR": "test_value", "ANOTHER_VAR": "another_value"}
-    )
+    env = DockerEnvironment(image="python:3.11",
+                            executable=executable,
+                            env={
+                                "TEST_VAR": "test_value",
+                                "ANOTHER_VAR": "another_value"
+                            })
 
     try:
         # Test single environment variable
@@ -93,10 +109,13 @@ def test_docker_environment_set_env_variables(executable):
 @pytest.mark.parametrize("executable", environment_params)
 def test_docker_environment_forward_env_variables(executable):
     """Test forwarding environment variables from host to container."""
-    with patch.dict(os.environ, {"HOST_VAR": "host_value", "ANOTHER_HOST_VAR": "another_host_value"}):
-        env = DockerEnvironment(
-            image="python:3.11", executable=executable, forward_env=["HOST_VAR", "ANOTHER_HOST_VAR"]
-        )
+    with patch.dict(os.environ, {
+            "HOST_VAR": "host_value",
+            "ANOTHER_HOST_VAR": "another_host_value"
+    }):
+        env = DockerEnvironment(image="python:3.11",
+                                executable=executable,
+                                forward_env=["HOST_VAR", "ANOTHER_HOST_VAR"])
 
         try:
             # Test single forwarded environment variable
@@ -116,12 +135,15 @@ def test_docker_environment_forward_env_variables(executable):
 @pytest.mark.parametrize("executable", environment_params)
 def test_docker_environment_forward_nonexistent_env_variables(executable):
     """Test forwarding non-existent environment variables (should be empty)."""
-    env = DockerEnvironment(image="python:3.11", executable=executable, forward_env=["NONEXISTENT_VAR"])
+    env = DockerEnvironment(image="python:3.11",
+                            executable=executable,
+                            forward_env=["NONEXISTENT_VAR"])
 
     try:
         result = env.execute('echo "[$NONEXISTENT_VAR]"')
         assert result["returncode"] == 0
-        assert "[]" in result["output"]  # Empty variable should result in empty string
+        assert "[]" in result[
+            "output"]  # Empty variable should result in empty string
     finally:
         env.cleanup()
 
@@ -131,9 +153,10 @@ def test_docker_environment_forward_nonexistent_env_variables(executable):
 def test_docker_environment_combined_env_and_forward(executable):
     """Test both setting and forwarding environment variables together."""
     with patch.dict(os.environ, {"HOST_VAR": "from_host"}):
-        env = DockerEnvironment(
-            image="python:3.11", executable=executable, env={"SET_VAR": "from_config"}, forward_env=["HOST_VAR"]
-        )
+        env = DockerEnvironment(image="python:3.11",
+                                executable=executable,
+                                env={"SET_VAR": "from_config"},
+                                forward_env=["HOST_VAR"])
 
         try:
             result = env.execute("echo $SET_VAR $HOST_VAR")
@@ -168,7 +191,9 @@ def test_docker_environment_env_override_forward(executable):
 @pytest.mark.parametrize("executable", environment_params)
 def test_docker_environment_custom_cwd(executable):
     """Test executing commands in a custom working directory."""
-    env = DockerEnvironment(image="python:3.11", executable=executable, cwd="/tmp")
+    env = DockerEnvironment(image="python:3.11",
+                            executable=executable,
+                            cwd="/tmp")
 
     try:
         result = env.execute("pwd")
@@ -182,7 +207,9 @@ def test_docker_environment_custom_cwd(executable):
 @pytest.mark.parametrize("executable", environment_params)
 def test_docker_environment_cwd_parameter_override(executable):
     """Test that the cwd parameter in execute() overrides the config cwd."""
-    env = DockerEnvironment(image="python:3.11", executable=executable, cwd="/")
+    env = DockerEnvironment(image="python:3.11",
+                            executable=executable,
+                            cwd="/")
 
     try:
         result = env.execute("pwd", cwd="/tmp")
@@ -211,17 +238,23 @@ def test_docker_environment_custom_container_timeout(executable):
     """Test that custom container_timeout is respected."""
     import time
 
-    env = DockerEnvironment(image="python:3.11", executable=executable, container_timeout="3s")
+    env = DockerEnvironment(image="python:3.11",
+                            executable=executable,
+                            container_timeout="3s")
 
     try:
         result = env.execute("echo 'container is running'")
         assert result["returncode"] == 0
         assert "container is running" in result["output"]
         time.sleep(5)
-        with pytest.raises((subprocess.CalledProcessError, subprocess.TimeoutExpired)):
+        with pytest.raises(
+            (subprocess.CalledProcessError, subprocess.TimeoutExpired)):
             # This command should fail because the container has stopped
             subprocess.run(
-                [executable, "exec", env.container_id, "echo", "still running"],
+                [
+                    executable, "exec", env.container_id, "echo",
+                    "still running"
+                ],
                 check=True,
                 capture_output=True,
                 timeout=2,

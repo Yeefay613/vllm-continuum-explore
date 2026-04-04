@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 
 import logging
 import os
@@ -28,9 +30,12 @@ class SingularityEnvironmentConfig:
 
 
 class SingularityEnvironment:
-    def __init__(
-        self, *, config_class: type = SingularityEnvironmentConfig, logger: logging.Logger | None = None, **kwargs
-    ):
+
+    def __init__(self,
+                 *,
+                 config_class: type = SingularityEnvironmentConfig,
+                 logger: logging.Logger | None = None,
+                 **kwargs):
         """Singularity environment. See `SingularityEnvironmentConfig` for kwargs."""
         self.logger = logger or logging.getLogger("minisweagent.environment")
         self.config = config_class(**kwargs)
@@ -40,10 +45,14 @@ class SingularityEnvironment:
         # Building the sandbox can fail (very rarely), so we retry it
         max_retries = self.config.sandbox_build_retries
         for attempt in range(max_retries):
-            sandbox_dir = Path(tempfile.gettempdir()) / f"minisweagent-{uuid.uuid4().hex[:8]}"
+            sandbox_dir = Path(
+                tempfile.gettempdir()) / f"minisweagent-{uuid.uuid4().hex[:8]}"
             try:
                 subprocess.run(
-                    [self.config.executable, "build", "--sandbox", sandbox_dir, self.config.image],
+                    [
+                        self.config.executable, "build", "--sandbox",
+                        sandbox_dir, self.config.image
+                    ],
                     check=True,
                     capture_output=True,
                 )
@@ -60,7 +69,11 @@ class SingularityEnvironment:
     def get_template_vars(self) -> dict[str, Any]:
         return asdict(self.config)
 
-    def execute(self, command: str, cwd: str = "", *, timeout: int | None = None) -> dict[str, Any]:
+    def execute(self,
+                command: str,
+                cwd: str = "",
+                *,
+                timeout: int | None = None) -> dict[str, Any]:
         """Execute a command in a Singularity container and return the result as a dict."""
         cmd = [self.config.executable, "exec"]
 
@@ -77,7 +90,9 @@ class SingularityEnvironment:
         for key, value in self.config.env.items():
             cmd.extend(["--env", f"{key}={value}"])
 
-        cmd.extend(["--writable", str(self.sandbox_dir), "bash", "-c", command])
+        cmd.extend(
+            ["--writable",
+             str(self.sandbox_dir), "bash", "-c", command])
         result = subprocess.run(
             cmd,
             text=True,

@@ -1,18 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import logging
 import os
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from typing import Any
 
-from openai import OpenAI, BadRequestError
-from tenacity import (
-    before_sleep_log,
-    retry,
-    retry_if_not_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
-
 from minisweagent.models import GLOBAL_MODEL_STATS
+from openai import BadRequestError, OpenAI
+from tenacity import (before_sleep_log, retry, retry_if_not_exception_type,
+                      stop_after_attempt, wait_exponential)
 
 logger = logging.getLogger("vllm_model")
 
@@ -91,19 +87,19 @@ class VllmModel:
         filtered = {k: v for k, v in params.items() if k in valid_params}
         if filtered != params:
             dropped = set(params.keys()) - set(filtered.keys())
-            logger.debug(f"Dropped incompatible parameters for OpenAI API: {dropped}")
+            logger.debug(
+                f"Dropped incompatible parameters for OpenAI API: {dropped}")
         return filtered
 
     @retry(
-        stop=stop_after_attempt(int(os.getenv("MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT", "10"))),
+        stop=stop_after_attempt(
+            int(os.getenv("MSWEA_MODEL_RETRY_STOP_AFTER_ATTEMPT", "10"))),
         wait=wait_exponential(multiplier=1, min=4, max=60),
         before_sleep=before_sleep_log(logger, logging.WARNING),
-        retry=retry_if_not_exception_type(
-            (
-                KeyboardInterrupt,
-                ContextLengthExceededError,
-            )
-        ),
+        retry=retry_if_not_exception_type((
+            KeyboardInterrupt,
+            ContextLengthExceededError,
+        )),
     )
     def _query(self, messages: list[dict[str, str]], **kwargs):
         """Internal query method with retry logic."""
@@ -117,7 +113,8 @@ class VllmModel:
 
             # Add max_completion_tokens from config if not explicitly provided
             if "max_completion_tokens" not in all_params and "max_tokens" not in all_params:
-                all_params["max_completion_tokens"] = self.config.max_completion_tokens
+                all_params[
+                    "max_completion_tokens"] = self.config.max_completion_tokens
 
             filtered_params = self._filter_openai_params(all_params)
 
@@ -138,12 +135,12 @@ class VllmModel:
                 model=self.config.model_name,
                 messages=messages,
                 extra_body=extra_body,
-                **filtered_params
-            )
+                **filtered_params)
         except BadRequestError as e:
             # Check if this is a context length exceeded error
             error_message = str(e)
-            if "maximum context length" in error_message.lower() or "context length" in error_message.lower():
+            if "maximum context length" in error_message.lower(
+            ) or "context length" in error_message.lower():
                 logger.error(f"Context length exceeded: {error_message}")
                 raise ContextLengthExceededError(error_message) from e
             logger.error(f"Bad request error querying vLLM server: {e}")
@@ -191,7 +188,8 @@ class VllmModel:
             return {
                 "content": content,
                 "extra": {
-                    "response": full_response.model_dump() if full_response else {},
+                    "response":
+                    full_response.model_dump() if full_response else {},
                     "streamed": True,
                 },
             }
@@ -207,4 +205,7 @@ class VllmModel:
 
     def get_template_vars(self) -> dict[str, Any]:
         """Get template variables for this model instance."""
-        return asdict(self.config) | {"n_model_calls": self.n_calls, "model_cost": self.cost}
+        return asdict(self.config) | {
+            "n_model_calls": self.n_calls,
+            "model_cost": self.cost
+        }

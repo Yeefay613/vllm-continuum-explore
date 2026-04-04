@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Run mini-SWE-agent on SWE-bench instances in batch mode."""
 # Read this first: https://mini-swe-agent.com/latest/usage/swebench/  (usage docs)
 
@@ -16,8 +17,6 @@ import typer
 import yaml
 from datasets import load_dataset
 from jinja2 import StrictUndefined, Template
-from rich.live import Live
-
 from minisweagent import Environment
 from minisweagent.agents.default import DefaultAgent
 from minisweagent.config import builtin_config_dir, get_config_path
@@ -26,6 +25,7 @@ from minisweagent.models import get_model
 from minisweagent.run.extra.utils.batch_progress import RunBatchProgressManager
 from minisweagent.run.utils.save import save_traj
 from minisweagent.utils.log import add_file_handler, logger
+from rich.live import Live
 
 _HELP_TEXT = """Run mini-SWE-agent on SWEBench instances.
 
@@ -46,14 +46,17 @@ DATASET_MAPPING = {
     "_test": "klieret/swe-bench-dummy-test-dataset",
 }
 
-
 _OUTPUT_FILE_LOCK = threading.Lock()
 
 
 class ProgressTrackingAgent(DefaultAgent):
     """Simple wrapper around DefaultAgent that provides progress updates."""
 
-    def __init__(self, *args, progress_manager: RunBatchProgressManager, instance_id: str = "", **kwargs):
+    def __init__(self,
+                 *args,
+                 progress_manager: RunBatchProgressManager,
+                 instance_id: str = "",
+                 **kwargs):
         super().__init__(*args, **kwargs)
         self.progress_manager: RunBatchProgressManager = progress_manager
         self.instance_id = instance_id
@@ -61,8 +64,8 @@ class ProgressTrackingAgent(DefaultAgent):
     def step(self) -> dict:
         """Override step to provide progress updates."""
         self.progress_manager.update_instance_status(
-            self.instance_id, f"Step {self.model.n_calls + 1:3d} (${self.model.cost:.2f})"
-        )
+            self.instance_id,
+            f"Step {self.model.n_calls + 1:3d} (${self.model.cost:.2f})")
         return super().step()
 
 
@@ -73,13 +76,15 @@ def get_swebench_docker_image_name(instance: dict) -> str:
         # Docker doesn't allow double underscore, so we replace them with a magic token
         iid = instance["instance_id"]
         id_docker_compatible = iid.replace("__", "_1776_")
-        image_name = f"docker.io/swebench/sweb.eval.x86_64.{id_docker_compatible}:latest".lower()
+        image_name = f"docker.io/swebench/sweb.eval.x86_64.{id_docker_compatible}:latest".lower(
+        )
     return image_name
 
 
 def get_sb_environment(config: dict, instance: dict) -> Environment:
     env_config = config.setdefault("environment", {})
-    env_config["environment_class"] = env_config.get("environment_class", "docker")
+    env_config["environment_class"] = env_config.get("environment_class",
+                                                     "docker")
     image_name = get_swebench_docker_image_name(instance)
     if env_config["environment_class"] == "docker":
         env_config["image"] = image_name
@@ -87,14 +92,16 @@ def get_sb_environment(config: dict, instance: dict) -> Environment:
         env_config["image"] = "docker://" + image_name
     env = get_environment(env_config)
     if startup_command := config.get("run", {}).get("env_startup_command"):
-        startup_command = Template(startup_command, undefined=StrictUndefined).render(**instance)
+        startup_command = Template(
+            startup_command, undefined=StrictUndefined).render(**instance)
         out = env.execute(startup_command)
         if out["returncode"] != 0:
             raise RuntimeError(f"Error executing startup command: {out}")
     return env
 
 
-def update_preds_file(output_path: Path, instance_id: str, model_name: str, result: str):
+def update_preds_file(output_path: Path, instance_id: str, model_name: str,
+                      result: str):
     """Update the output JSON file with results from a single instance."""
     with _OUTPUT_FILE_LOCK:
         output_data = {}
@@ -135,15 +142,18 @@ def process_instance(
 
     # For vLLM models, pass job_id and step_limit
     model_config = config.get("model", {}).copy()
-    if model_config.get("model_class") == "vllm" or "vllm" in model_config.get("model_class", "").lower():
+    if model_config.get("model_class") == "vllm" or "vllm" in model_config.get(
+            "model_class", "").lower():
         model_config["job_id"] = instance_number
-        model_config["step_limit"] = config.get("agent", {}).get("step_limit", 0)
+        model_config["step_limit"] = config.get("agent",
+                                                {}).get("step_limit", 0)
 
     model = get_model(config=model_config)
     task = instance["problem_statement"]
 
     progress_manager.on_instance_start(instance_id)
-    progress_manager.update_instance_status(instance_id, "Pulling/starting docker")
+    progress_manager.update_instance_status(instance_id,
+                                            "Pulling/starting docker")
 
     agent = None
     extra_info = None
@@ -159,7 +169,8 @@ def process_instance(
         )
         exit_status, result = agent.run(task)
     except Exception as e:
-        logger.error(f"Error processing instance {instance_id}: {e}", exc_info=True)
+        logger.error(f"Error processing instance {instance_id}: {e}",
+                     exc_info=True)
         exit_status, result = type(e).__name__, str(e)
         extra_info = {"traceback": traceback.format_exc()}
     finally:
@@ -172,27 +183,35 @@ def process_instance(
             instance_id=instance_id,
             print_fct=logger.info,
         )
-        update_preds_file(output_dir / "preds.json", instance_id, model.config.model_name, result)
+        update_preds_file(output_dir / "preds.json", instance_id,
+                          model.config.model_name, result)
         progress_manager.on_instance_end(instance_id, exit_status)
 
 
-def filter_instances(
-    instances: list[dict], *, filter_spec: str, slice_spec: str = "", shuffle: bool = False
-) -> list[dict]:
+def filter_instances(instances: list[dict],
+                     *,
+                     filter_spec: str,
+                     slice_spec: str = "",
+                     shuffle: bool = False) -> list[dict]:
     """Filter and slice a list of SWEBench instances."""
     if shuffle:
         instances = sorted(instances.copy(), key=lambda x: x["instance_id"])
         random.seed(42)
         random.shuffle(instances)
     before_filter = len(instances)
-    instances = [instance for instance in instances if re.match(filter_spec, instance["instance_id"])]
+    instances = [
+        instance for instance in instances
+        if re.match(filter_spec, instance["instance_id"])
+    ]
     if (after_filter := len(instances)) != before_filter:
-        logger.info(f"Instance filter: {before_filter} -> {after_filter} instances")
+        logger.info(
+            f"Instance filter: {before_filter} -> {after_filter} instances")
     if slice_spec:
         values = [int(x) if x else None for x in slice_spec.split(":")]
         instances = instances[slice(*values)]
         if (after_slice := len(instances)) != before_filter:
-            logger.info(f"Instance slice: {before_filter} -> {after_slice} instances")
+            logger.info(
+                f"Instance slice: {before_filter} -> {after_slice} instances")
     return instances
 
 
@@ -225,18 +244,26 @@ def main(
     logger.info(f"Loading dataset {dataset_path}, split {split}...")
     instances = list(load_dataset(dataset_path, split=split))
 
-    instances = filter_instances(instances, filter_spec=filter_spec, slice_spec=slice_spec, shuffle=shuffle)
+    instances = filter_instances(instances,
+                                 filter_spec=filter_spec,
+                                 slice_spec=slice_spec,
+                                 shuffle=shuffle)
     if not redo_existing and (output_path / "preds.json").exists():
-        existing_instances = list(json.loads((output_path / "preds.json").read_text()).keys())
+        existing_instances = list(
+            json.loads((output_path / "preds.json").read_text()).keys())
         logger.info(f"Skipping {len(existing_instances)} existing instances")
-        instances = [instance for instance in instances if instance["instance_id"] not in existing_instances]
+        instances = [
+            instance for instance in instances
+            if instance["instance_id"] not in existing_instances
+        ]
     logger.info(f"Running on {len(instances)} instances...")
 
     config_path = get_config_path(config_spec)
     logger.info(f"Loading agent config from '{config_path}'")
     config = yaml.safe_load(config_path.read_text())
     if environment_class is not None:
-        config.setdefault("environment", {})["environment_class"] = environment_class
+        config.setdefault("environment",
+                          {})["environment_class"] = environment_class
     if model is not None:
         config.setdefault("model", {})["model_name"] = model
     if model_class is not None:
@@ -251,7 +278,8 @@ def main(
             # Keep legacy behavior for model configs that support a direct port field
             model_cfg["port"] = port
 
-    progress_manager = RunBatchProgressManager(len(instances), output_path / f"exit_statuses_{time.time()}.yaml")
+    progress_manager = RunBatchProgressManager(
+        len(instances), output_path / f"exit_statuses_{time.time()}.yaml")
 
     def process_futures(futures: dict[concurrent.futures.Future, str]):
         for future in concurrent.futures.as_completed(futures):
@@ -261,12 +289,16 @@ def main(
                 pass
             except Exception as e:
                 instance_id = futures[future]
-                logger.error(f"Error in future for instance {instance_id}: {e}", exc_info=True)
+                logger.error(
+                    f"Error in future for instance {instance_id}: {e}",
+                    exc_info=True)
                 progress_manager.on_uncaught_exception(instance_id, e)
 
     if use_jps:
         # JPS mode: process instances concurrently with Poisson process arrival times
-        logger.info(f"Using JPS mode with Poisson process at rate {jps} jobs per second")
+        logger.info(
+            f"Using JPS mode with Poisson process at rate {jps} jobs per second"
+        )
 
         # Pre-calculate arrival times using Poisson process (exponential inter-arrival times)
         arrival_times = []
@@ -288,20 +320,22 @@ def main(
                 time.sleep(wait_time)
 
             try:
-                process_instance(instance, output_path, config, progress_manager, idx + 1)
+                process_instance(instance, output_path, config,
+                                 progress_manager, idx + 1)
             except Exception as e:
                 instance_id = instance["instance_id"]
-                logger.error(f"Error processing instance {instance_id}: {e}", exc_info=True)
+                logger.error(f"Error processing instance {instance_id}: {e}",
+                             exc_info=True)
                 progress_manager.on_uncaught_exception(instance_id, e)
 
         with Live(progress_manager.render_group, refresh_per_second=4):
             try:
                 # Start all threads
-                for idx, (instance, scheduled_time) in enumerate(zip(instances, arrival_times)):
-                    thread = threading.Thread(
-                        target=run_job_at_scheduled_time,
-                        args=(scheduled_time, instance, idx)
-                    )
+                for idx, (instance, scheduled_time) in enumerate(
+                        zip(instances, arrival_times)):
+                    thread = threading.Thread(target=run_job_at_scheduled_time,
+                                              args=(scheduled_time, instance,
+                                                    idx))
                     thread.start()
                     threads.append(thread)
 
@@ -310,23 +344,27 @@ def main(
                     thread.join()
 
             except KeyboardInterrupt:
-                logger.info("Interrupted by user. Waiting for running jobs to complete...")
+                logger.info(
+                    "Interrupted by user. Waiting for running jobs to complete..."
+                )
                 for thread in threads:
                     thread.join()
     else:
         # Worker pool mode: process instances in parallel
         with Live(progress_manager.render_group, refresh_per_second=4):
-            with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                    max_workers=workers) as executor:
                 futures = {
-                    executor.submit(process_instance, instance, output_path, config, progress_manager, idx + 1): instance[
-                        "instance_id"
-                    ]
+                    executor.submit(process_instance, instance, output_path, config, progress_manager, idx + 1):
+                    instance["instance_id"]
                     for idx, instance in enumerate(instances)
                 }
                 try:
                     process_futures(futures)
                 except KeyboardInterrupt:
-                    logger.info("Cancelling all pending jobs. Press ^C again to exit immediately.")
+                    logger.info(
+                        "Cancelling all pending jobs. Press ^C again to exit immediately."
+                    )
                     for future in futures:
                         if not future.running() and not future.done():
                             future.cancel()

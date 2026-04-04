@@ -1,30 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import json
 import os
 from unittest.mock import Mock, patch
 
 import pytest
 import requests
-
 from minisweagent.models import GLOBAL_MODEL_STATS
 from minisweagent.models.openrouter_model import (
-    OpenRouterAPIError,
-    OpenRouterAuthenticationError,
-    OpenRouterModel,
-)
+    OpenRouterAPIError, OpenRouterAuthenticationError, OpenRouterModel)
 
 
 @pytest.fixture
 def mock_response():
     """Create a mock successful OpenRouter API response."""
     return {
-        "choices": [{"message": {"content": "Hello! 2+2 equals 4."}}],
+        "choices": [{
+            "message": {
+                "content": "Hello! 2+2 equals 4."
+            }
+        }],
         "usage": {
             "prompt_tokens": 16,
             "completion_tokens": 13,
             "total_tokens": 29,
             "cost": 0.000243,
             "is_byok": False,
-            "prompt_tokens_details": {"cached_tokens": 0, "audio_tokens": 0},
+            "prompt_tokens_details": {
+                "cached_tokens": 0,
+                "audio_tokens": 0
+            },
             "cost_details": {
                 "upstream_inference_cost": None,
                 "upstream_inference_prompt_cost": 4.8e-05,
@@ -38,15 +43,24 @@ def mock_response():
 def mock_response_no_cost():
     """Create a mock OpenRouter API response without cost information."""
     return {
-        "choices": [{"message": {"content": "Hello! 2+2 equals 4."}}],
-        "usage": {"prompt_tokens": 16, "completion_tokens": 13, "total_tokens": 29},
+        "choices": [{
+            "message": {
+                "content": "Hello! 2+2 equals 4."
+            }
+        }],
+        "usage": {
+            "prompt_tokens": 16,
+            "completion_tokens": 13,
+            "total_tokens": 29
+        },
     }
 
 
 def test_openrouter_model_successful_query(mock_response):
     """Test successful OpenRouter API query with cost tracking."""
     with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-        model = OpenRouterModel(model_name="anthropic/claude-3.5-sonnet", model_kwargs={"temperature": 0.7})
+        model = OpenRouterModel(model_name="anthropic/claude-3.5-sonnet",
+                                model_kwargs={"temperature": 0.7})
 
         initial_cost = GLOBAL_MODEL_STATS.cost
 
@@ -64,7 +78,8 @@ def test_openrouter_model_successful_query(mock_response):
             call_args = mock_post.call_args
 
             # Check URL (first positional argument)
-            assert call_args[0][0] == "https://openrouter.ai/api/v1/chat/completions"
+            assert call_args[0][
+                0] == "https://openrouter.ai/api/v1/chat/completions"
 
             # Check headers
             headers = call_args[1]["headers"]
@@ -99,17 +114,20 @@ def test_openrouter_model_authentication_error():
             mock_response.status_code = 401
             mock_response.text = "Unauthorized"
             mock_post.return_value = mock_response
-            mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError()
+            mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            )
 
             messages = [{"role": "user", "content": "test"}]
 
             # Patch the retry decorator to avoid waiting (auth errors don't retry anyway)
-            with patch("minisweagent.models.openrouter_model.retry", lambda **kwargs: lambda f: f):
+            with patch("minisweagent.models.openrouter_model.retry",
+                       lambda **kwargs: lambda f: f):
                 with pytest.raises(OpenRouterAuthenticationError) as exc_info:
                     model._query(messages)
 
                 assert "Authentication failed" in str(exc_info.value)
-                assert "mini-extra config set OPENROUTER_API_KEY" in str(exc_info.value)
+                assert "mini-extra config set OPENROUTER_API_KEY" in str(
+                    exc_info.value)
 
 
 def test_openrouter_model_no_cost_information(mock_response_no_cost):
@@ -134,12 +152,17 @@ def test_openrouter_model_no_cost_information(mock_response_no_cost):
 def test_openrouter_model_config():
     """Test OpenRouter model configuration."""
     with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-        model = OpenRouterModel(
-            model_name="anthropic/claude-3.5-sonnet", model_kwargs={"temperature": 0.5, "max_tokens": 1000}
-        )
+        model = OpenRouterModel(model_name="anthropic/claude-3.5-sonnet",
+                                model_kwargs={
+                                    "temperature": 0.5,
+                                    "max_tokens": 1000
+                                })
 
         assert model.config.model_name == "anthropic/claude-3.5-sonnet"
-        assert model.config.model_kwargs == {"temperature": 0.5, "max_tokens": 1000}
+        assert model.config.model_kwargs == {
+            "temperature": 0.5,
+            "max_tokens": 1000
+        }
         assert model._api_key == "test-key"
         assert model.cost == 0.0
         assert model.n_calls == 0
@@ -148,7 +171,8 @@ def test_openrouter_model_config():
 def test_openrouter_model_get_template_vars():
     """Test get_template_vars method."""
     with patch.dict(os.environ, {"OPENROUTER_API_KEY": "test-key"}):
-        model = OpenRouterModel(model_name="anthropic/claude-3.5-sonnet", model_kwargs={"temperature": 0.7})
+        model = OpenRouterModel(model_name="anthropic/claude-3.5-sonnet",
+                                model_kwargs={"temperature": 0.7})
 
         # Simulate some usage
         model.cost = 0.001234
@@ -174,11 +198,13 @@ def test_openrouter_model_no_api_key():
             mock_response.status_code = 401
             mock_response.text = "Unauthorized"
             mock_post.return_value = mock_response
-            mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError()
+            mock_post.return_value.raise_for_status.side_effect = requests.exceptions.HTTPError(
+            )
 
             messages = [{"role": "user", "content": "test"}]
 
             # Patch the retry decorator to avoid waiting
-            with patch("minisweagent.models.openrouter_model.retry", lambda **kwargs: lambda f: f):
+            with patch("minisweagent.models.openrouter_model.retry",
+                       lambda **kwargs: lambda f: f):
                 with pytest.raises(OpenRouterAuthenticationError):
                     model._query(messages)

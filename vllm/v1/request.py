@@ -44,16 +44,15 @@ class Request:
         is_last_step: Optional[bool] = None,
         this_func_call: Optional[str] = None,
     ) -> None:
-    # TODO (Hanchen) need to input job_id, last_func_call, is_last_step, this_func_call from the API request
+        # TODO (Hanchen) need to input job_id, last_func_call, is_last_step, this_func_call from the API request
         self.job_id = job_id
         # NOTE (Hanchen) this i s used for emulation, we have other ways to get this information in real experiment
 
         self.last_func_call = last_func_call
         self.is_last_step = is_last_step
         self.this_func_call = this_func_call
-        
-        
-        self.request_id = request_id  
+
+        self.request_id = request_id
         self.client_index = client_index
         self.priority = priority
         self.sampling_params = sampling_params

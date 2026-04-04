@@ -1,6 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 import pytest
-
-from minisweagent.environments.extra.swerex_docker import SwerexDockerEnvironment
+from minisweagent.environments.extra.swerex_docker import (
+    SwerexDockerEnvironment)
 
 
 @pytest.mark.slow

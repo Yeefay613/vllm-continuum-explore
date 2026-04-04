@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright contributors to the vLLM project
 """Run mini-SWE-agent in your local environment. This is the default executable `mini`."""
 # Read this first: https://mini-swe-agent.com/latest/usage/mini/  (usage)
 
@@ -10,11 +11,6 @@ from typing import Any
 
 import typer
 import yaml
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.history import FileHistory
-from prompt_toolkit.shortcuts import PromptSession
-from rich.console import Console
-
 from minisweagent import global_config_dir
 from minisweagent.agents.interactive import InteractiveAgent
 from minisweagent.agents.interactive_textual import TextualAgent
@@ -24,12 +20,18 @@ from minisweagent.models import get_model
 from minisweagent.run.extra.config import configure_if_first_time
 from minisweagent.run.utils.save import save_traj
 from minisweagent.utils.log import logger
+from prompt_toolkit.formatted_text import HTML
+from prompt_toolkit.history import FileHistory
+from prompt_toolkit.shortcuts import PromptSession
+from rich.console import Console
 
-DEFAULT_CONFIG = Path(os.getenv("MSWEA_MINI_CONFIG_PATH", builtin_config_dir / "mini.yaml"))
+DEFAULT_CONFIG = Path(
+    os.getenv("MSWEA_MINI_CONFIG_PATH", builtin_config_dir / "mini.yaml"))
 DEFAULT_OUTPUT = global_config_dir / "last_mini_run.traj.json"
 console = Console(highlight=False)
 app = typer.Typer(rich_markup_mode="rich")
-prompt_session = PromptSession(history=FileHistory(global_config_dir / "mini_task_history.txt"))
+prompt_session = PromptSession(history=FileHistory(global_config_dir /
+                                                   "mini_task_history.txt"))
 _HELP_TEXT = """Run mini-SWE-agent in your local environment.
 
 [not dim]
@@ -59,7 +61,8 @@ def main(
     # fmt: on
     configure_if_first_time()
     config_path = get_config_path(config_spec)
-    console.print(f"Loading agent config from [bold green]'{config_path}'[/bold green]")
+    console.print(
+        f"Loading agent config from [bold green]'{config_path}'[/bold green]")
     config = yaml.safe_load(config_path.read_text())
 
     if not task:
@@ -70,8 +73,7 @@ def main(
             bottom_toolbar=HTML(
                 "Submit task: <b fg='yellow' bg='black'>Esc+Enter</b> | "
                 "Navigate history: <b fg='yellow' bg='black'>Arrow Up/Down</b> | "
-                "Search history: <b fg='yellow' bg='black'>Ctrl+R</b>"
-            ),
+                "Search history: <b fg='yellow' bg='black'>Ctrl+R</b>"),
         )
         console.print("[bold green]Got that, thanks![/bold green]")
 
@@ -101,7 +103,11 @@ def main(
         extra_info = {"traceback": traceback.format_exc()}
     finally:
         if output:
-            save_traj(agent, output, exit_status=exit_status, result=result, extra_info=extra_info)  # type: ignore[arg-type]
+            save_traj(agent,
+                      output,
+                      exit_status=exit_status,
+                      result=result,
+                      extra_info=extra_info)  # type: ignore[arg-type]
     return agent
 
 
