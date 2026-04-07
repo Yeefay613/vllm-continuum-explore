@@ -217,7 +217,7 @@ class Scheduler(SchedulerInterface):
 
         for req in self.running:
             job_entry_time = self.running_job_id_first_entry_time.get(
-                req.job_id)
+                req.job_id, -float('inf'))
             if job_entry_time > latest_entry_time and not req.is_last_step:
                 latest_entry_time = job_entry_time
                 latest_request = req
@@ -229,7 +229,7 @@ class Scheduler(SchedulerInterface):
         # Second, check the other requests
         for req in self.running:
             job_entry_time = self.running_job_id_first_entry_time.get(
-                req.job_id)
+                req.job_id, -float('inf'))
             if job_entry_time > latest_entry_time:
                 latest_entry_time = job_entry_time
                 latest_request = req
@@ -237,6 +237,8 @@ class Scheduler(SchedulerInterface):
         if latest_request is not None:
             self.running.remove(latest_request)
             return latest_request, False
+
+        raise IndexError("No request found in running queue")
 
     # TODO (Hanchen) needs to get current time, add with length of pin to put end time of pin
     def pin_request(self, request: Request, length_of_pin: float) -> None:
@@ -478,7 +480,7 @@ class Scheduler(SchedulerInterface):
                     request = self.waiting.peek_request()
                 elif self.policy == SchedulingPolicy.CONTINUUM:
                     #The current implementation is basically giving priority to jobs with less prefill tokens.
-                    request = self.waiting.peek_request(
+                    request = self.waiting.peek_request_continuum(
                         self.pinned_requests, self.kv_cache_manager,
                         self.connector)
                 else:
@@ -494,7 +496,7 @@ class Scheduler(SchedulerInterface):
                             "%s is still in WAITING_FOR_REMOTE_KVS state.",
                             request.request_id)
                         if self.policy == SchedulingPolicy.CONTINUUM:
-                            self.waiting.pop_request(self.pinned_requests,
+                            self.waiting.pop_request_continuum(self.pinned_requests,
                                                      self.kv_cache_manager,
                                                      self.connector)
                         else:
@@ -510,7 +512,7 @@ class Scheduler(SchedulerInterface):
                         request.status = RequestStatus.WAITING
                     else:
                         if self.policy == SchedulingPolicy.CONTINUUM:
-                            self.waiting.pop_request(self.pinned_requests,
+                            self.waiting.pop_request_continuum(self.pinned_requests,
                                                      self.kv_cache_manager,
                                                      self.connector)
                         else:

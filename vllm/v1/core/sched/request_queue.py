@@ -234,7 +234,7 @@ class ContinuumRequestQueue(deque[Request], RequestQueue):
             self.job_id_first_entry_time[request.job_id] = request.arrival_time
         self.append(request)
 
-    def pop_request(self, pinned_requests: list[Tuple[Request, float]],
+    def pop_request_continuum(self, pinned_requests: list[Tuple[Request, float]],
                     kv_cache_manager: KVCacheManager,
                     connector: KVConnectorBase_V1) -> Request:
         """Pop a request from the queue according to continuum policy."""
@@ -244,7 +244,7 @@ class ContinuumRequestQueue(deque[Request], RequestQueue):
         return request
 
     # NOTE (Hanchen): priority is pinned request -> job_id level FCFS
-    def peek_request(self, pinned_requests: list[Tuple[Request, float]],
+    def peek_request_continuum(self, pinned_requests: list[Tuple[Request, float]],
                      kv_cache_manager: KVCacheManager,
                      connector: KVConnectorBase_V1) -> Request:
         if not self:

@@ -172,6 +172,10 @@ class ToolCallEstimator:
         #this is called when the func call is back again in scheduler.py, update the exec time with last_func_call
         last_departure_time = self.job_to_history[job_id][-1]["departure_time"]
         func = self.job_to_history[job_id][-1]["func_call"]
+
+        if func is None:
+            return
+
         exec_time = time.time() - last_departure_time
 
         if func not in self.record_func_call_to_exec_time:
@@ -207,7 +211,11 @@ class ToolCallEstimator:
             self.job_to_history[request.job_id].append(
                 {"arrival_time": request.arrival_time})
             return
-        request.last_func_call = self.job_to_history[request.job_id][-1]["func_call"]
+        # Get the last history entry safely
+        last_entry = self.job_to_history[request.job_id][-1]
+        if "func_call" in last_entry:
+            request.last_func_call = last_entry["func_call"]
+        # If func_call is None or missing, last_func_call remains None
         logger.info(
             f"Request job id: {request.job_id}, last func call: {request.last_func_call}"
         )

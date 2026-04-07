@@ -11,11 +11,11 @@ to the last Request_departure_time.
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, dict, list
 
 
 def load_scheduler_timestamps(
-        input_dir: str) -> Dict[str, List[Dict[str, Any]]]:
+        input_dir: str) -> dict[str, list[dict[str, Any]]]:
     """Load scheduler_timestamps from the input directory."""
     timestamp_file = Path(input_dir) / "scheduler_timestamps"
 
